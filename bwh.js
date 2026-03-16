@@ -29,16 +29,14 @@ export default async function (ctx) {
   const remaining = Math.max(total - used, 0);
   const usedPercent = Math.min((used / total) * 100, 100);
 
-  function formatBytes(bytes) {
-    if (bytes >= 1024 ** 4) return (bytes / 1024 ** 4).toFixed(2) + ' TB';
-    if (bytes >= 1024 ** 3) return (bytes / 1024 ** 3).toFixed(2) + ' GB';
-    if (bytes >= 1024 ** 2) return (bytes / 1024 ** 2).toFixed(2) + ' MB';
-    if (bytes >= 1024)      return (bytes / 1024).toFixed(2) + ' KB';
-    return bytes + ' B';
+  function toGB(bytes) {
+    return (bytes / 1024 ** 3).toFixed(2) + ' GB';
   }
 
   const resetDate = new Date(data.data_next_reset * 1000);
-  const resetISO = resetDate.toISOString();
+  const resetStr = resetDate.getFullYear() + '-'
+    + String(resetDate.getMonth() + 1).padStart(2, '0') + '-'
+    + String(resetDate.getDate()).padStart(2, '0');
 
   const barColor = usedPercent >= 90 ? '#FF3B30' : usedPercent >= 70 ? '#FF9500' : '#30D158';
 
@@ -58,12 +56,12 @@ export default async function (ctx) {
         },
         {
           type: 'text',
-          text: `已用 ${formatBytes(used)} / ${formatBytes(total)}`,
+          text: `已用 ${toGB(used)} / ${toGB(total)}`,
           font: { size: 'caption1' },
         },
         {
           type: 'text',
-          text: `重置: ${resetDate.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}`,
+          text: `重置: ${resetStr}`,
           font: { size: 'caption2' },
         },
       ],
@@ -114,13 +112,13 @@ export default async function (ctx) {
         },
         {
           type: 'text',
-          text: `${formatBytes(used)} 已用`,
+          text: `${toGB(used)} 已用`,
           font: { size: 'caption1' },
           textColor: '#FFFFFFAA',
         },
         {
           type: 'text',
-          text: `剩余 ${formatBytes(remaining)}`,
+          text: `剩余 ${toGB(remaining)}`,
           font: { size: 'caption2' },
           textColor: '#FFFFFF66',
         },
@@ -145,27 +143,10 @@ export default async function (ctx) {
           ],
         },
         {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'center',
-          gap: 4,
-          children: [
-            {
-              type: 'image',
-              src: 'sf-symbol:arrow.clockwise',
-              color: '#FFFFFF55',
-              width: 10,
-              height: 10,
-            },
-            {
-              type: 'date',
-              date: resetISO,
-              format: 'relative',
-              font: { size: 'caption2' },
-              textColor: '#FFFFFF55',
-              maxLines: 1,
-            },
-          ],
+          type: 'text',
+          text: `重置: ${resetStr}`,
+          font: { size: 'caption2' },
+          textColor: '#FFFFFF55',
         },
       ],
     };
@@ -250,7 +231,7 @@ export default async function (ctx) {
               },
               {
                 type: 'text',
-                text: formatBytes(used),
+                text: toGB(used),
                 font: { size: 'title3', weight: 'semibold' },
                 textColor: '#FFFFFF',
               },
@@ -272,7 +253,7 @@ export default async function (ctx) {
               },
               {
                 type: 'text',
-                text: formatBytes(remaining),
+                text: toGB(remaining),
                 font: { size: 'title3', weight: 'semibold' },
                 textColor: barColor,
                 textAlign: 'right',
@@ -308,7 +289,7 @@ export default async function (ctx) {
               },
               {
                 type: 'text',
-                text: `月总量 ${formatBytes(total)}`,
+                text: `月总量 ${toGB(total)}`,
                 font: { size: 'caption1' },
                 textColor: '#FFFFFF77',
               },
@@ -329,17 +310,9 @@ export default async function (ctx) {
               },
               {
                 type: 'text',
-                text: '重置于 ',
-                font: { size: 'caption1' },
-                textColor: '#FFFFFF77',
-              },
-              {
-                type: 'date',
-                date: resetISO,
-                format: 'relative',
+                text: `重置于 ${resetStr}`,
                 font: { size: 'caption1' },
                 textColor: '#FFFFFF99',
-                maxLines: 1,
               },
             ],
           },
