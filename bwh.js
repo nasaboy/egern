@@ -325,13 +325,6 @@ export default async function (ctx) {
           },
         ],
       },
-      // 分割线
-      {
-        type: 'stack',
-        height: 1,
-        backgroundColor: '#FFFFFF1A',
-        children: [],
-      },
       // 月总量 & 重置日期
       {
         type: 'stack',
