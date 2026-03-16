@@ -47,7 +47,7 @@ export default async function (ctx) {
   let info;
   try {
     const resp = await ctx.http.get(
-      `https://api.64clouds.com/v1/getServiceInfo?veid=${veid}&api_key=${apiKey}`,
+      `https://api.64clouds.com/v1/getLiveServiceInfo?veid=${veid}&api_key=${apiKey}`,
       { timeout: 10000 }
     );
     info = await resp.json();
@@ -67,6 +67,10 @@ export default async function (ctx) {
   const usedStr   = toGB(usedBytes);
   const totalStr  = toGB(totalBytes);
   const remainStr = toGB(Math.max(totalBytes - usedBytes, 0));
+
+  const statusColor = info.ve_status === 'Running' ? '#30D158'
+    : info.ve_status === 'Starting' ? '#FF9F0A'
+    : '#FF453A';
 
   const BG = {
     type: 'linear',
@@ -250,15 +254,15 @@ export default async function (ctx) {
           {
             type: 'image',
             src: 'sf-symbol:circle.fill',
-            color: info.suspended ? '#FF453A' : '#30D158',
+            color: statusColor,
             width: 8,
             height: 8,
           },
           {
             type: 'text',
-            text: info.suspended ? '已暂停' : '运行中',
+            text: info.ve_status || '未知',
             font: { size: 'caption1' },
-            textColor: info.suspended ? '#FF453A' : '#30D158',
+            textColor: statusColor,
             maxLines: 1,
           },
         ],
