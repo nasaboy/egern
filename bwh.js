@@ -1,3 +1,6 @@
+// VEID: 你的 BandwagonHost VPS ID
+// API_KEY: 你的 BandwagonHost API Key
+
 export default async function (ctx) {
   const veid   = ctx.env.VEID;
   const apiKey = ctx.env.API_KEY;
@@ -68,12 +71,12 @@ export default async function (ctx) {
   const totalStr  = toGB(totalBytes);
   const remainStr = toGB(Math.max(totalBytes - usedBytes, 0));
 
-  const statusText = info.ve_status === 'Running' ? '运行中'
-    : info.ve_status === 'Starting' ? '启动中'
+  const statusText = info.ve_status === 'running' ? '运行中'
+    : info.ve_status === 'starting' ? '启动中'
     : '已关机';
 
-  const statusColor = info.ve_status === 'Running' ? '#30D158'
-    : info.ve_status === 'Starting' ? '#FF9F0A'
+  const statusColor = info.ve_status === 'running' ? '#30D158'
+    : info.ve_status === 'starting' ? '#FF9F0A'
     : '#FF453A';
 
   const BG = {
