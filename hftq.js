@@ -106,11 +106,11 @@ export default async function (ctx) {
     (air.indexes || []).find((i) => i.code === "cn-mee") ||
     (air.indexes || []).find((i) => i.code === "cn-mee-1h") ||
     (air.indexes || [])[0];
-  const aqiVal = aqiIndex ? aqiIndex.aqiDisplay : "—";
+  const aqiVal = aqiIndex ? String(aqiIndex.aqi) : "—";
   // lang=zh 时 API 直接返回中文 category，无需手动映射
   const aqiCategory = aqiIndex ? aqiIndex.category : "";
   const aqiColor = aqiIndex
-    ? `rgba(${aqiIndex.color.red},${aqiIndex.color.green},${aqiIndex.color.blue},1)`
+    ? `rgba(${aqiIndex.color.red},${aqiIndex.color.green},${aqiIndex.color.blue},${aqiIndex.color.alpha})`
     : "#8E8E93";
 
   // 风力等级术语（按蒲福风级文档，0-17级完整映射）
