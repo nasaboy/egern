@@ -1,6 +1,6 @@
 // BWH流量小组件 for Egern
 // 环境变量（在 widgets env 中配置）
-// BWH管理后台KiwiVM里的API里可以找到
+// 登录https://bandwagonhost.com/clientarea.php,-->Services-->My Services-->点击齿轮-->Open KiWiVM-->左侧栏API
 // VEID: 你的 BandwagonHost VPS ID,比如：191977830
 // API_KEY: 你的 BandwagonHost API Key,比如：private_xxxxx
 
