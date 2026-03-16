@@ -68,6 +68,10 @@ export default async function (ctx) {
   const totalStr  = toGB(totalBytes);
   const remainStr = toGB(Math.max(totalBytes - usedBytes, 0));
 
+  const statusText = info.ve_status === 'Running' ? '运行中'
+    : info.ve_status === 'Starting' ? '启动中'
+    : '已关机';
+
   const statusColor = info.ve_status === 'Running' ? '#30D158'
     : info.ve_status === 'Starting' ? '#FF9F0A'
     : '#FF453A';
@@ -260,7 +264,7 @@ export default async function (ctx) {
           },
           {
             type: 'text',
-            text: info.ve_status || '未知',
+            text: statusText,
             font: { size: 'caption1' },
             textColor: statusColor,
             maxLines: 1,
