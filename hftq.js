@@ -101,10 +101,10 @@ export default async function (ctx) {
 
   const now = weather.now;
 
-  // AQI：中国标准优先 cn-mee-1h（实时）→ cn-mee（日均）→ 第一条兜底
+  // AQI：cn-mee 为中国实时标准（优先）→ cn-mee-1h 次之 → 第一条兜底
   const aqiIndex =
-    (air.indexes || []).find((i) => i.code === "cn-mee-1h") ||
     (air.indexes || []).find((i) => i.code === "cn-mee") ||
+    (air.indexes || []).find((i) => i.code === "cn-mee-1h") ||
     (air.indexes || [])[0];
   const aqiVal = aqiIndex ? aqiIndex.aqiDisplay : "—";
   // lang=zh 时 API 直接返回中文 category，无需手动映射
@@ -292,7 +292,10 @@ export default async function (ctx) {
       refreshAfter: refreshTime,
       backgroundGradient: {
         type: "linear",
-        colors: ["#3A7BD5", "#6AAFE6"],
+        colors: [
+          { light: "#3A7BD5", dark: "#1A3A6E" },
+          { light: "#6AAFE6", dark: "#0F2A55" },
+        ],
         stops: [0, 1],
         startPoint: { x: 0, y: 0 },
         endPoint: { x: 0, y: 1 },
@@ -678,7 +681,11 @@ export default async function (ctx) {
     refreshAfter: refreshTime,
     backgroundGradient: {
       type: "linear",
-      colors: ["#2E86C1", "#5DADE2", "#85C1E9"],
+      colors: [
+        { light: "#2E86C1", dark: "#0D1F3C" },
+        { light: "#5DADE2", dark: "#112844" },
+        { light: "#85C1E9", dark: "#163352" },
+      ],
       stops: [0, 0.5, 1],
       startPoint: { x: 0, y: 0 },
       endPoint: { x: 0, y: 1 },
