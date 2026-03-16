@@ -30,9 +30,10 @@ export default async function (ctx) {
   const usedPercent = Math.min((used / total) * 100, 100);
 
   function formatBytes(bytes) {
-    if (bytes >= 1e12) return (bytes / 1e12).toFixed(2) + ' TB';
-    if (bytes >= 1e9)  return (bytes / 1e9).toFixed(2) + ' GB';
-    if (bytes >= 1e6)  return (bytes / 1e6).toFixed(2) + ' MB';
+    if (bytes >= 1024 ** 4) return (bytes / 1024 ** 4).toFixed(2) + ' TiB';
+    if (bytes >= 1024 ** 3) return (bytes / 1024 ** 3).toFixed(2) + ' GiB';
+    if (bytes >= 1024 ** 2) return (bytes / 1024 ** 2).toFixed(2) + ' MiB';
+    if (bytes >= 1024)      return (bytes / 1024).toFixed(2) + ' KiB';
     return bytes + ' B';
   }
 
