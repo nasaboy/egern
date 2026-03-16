@@ -101,12 +101,11 @@ export default async function (ctx) {
 
   const now = weather.now;
 
-  // AQI：cn-mee 为中国实时标准（优先）→ cn-mee-1h 次之 → 第一条兜底
+  // AQI：cn-mee 为中国实时标准，不存在则取第一条兜底
   const aqiIndex =
     (air.indexes || []).find((i) => i.code === "cn-mee") ||
-    (air.indexes || []).find((i) => i.code === "cn-mee-1h") ||
     (air.indexes || [])[0];
-  const aqiVal = aqiIndex ? String(aqiIndex.aqi) : "—";
+  const aqiVal = aqiIndex ? aqiIndex.aqiDisplay : "—";
   // lang=zh 时 API 直接返回中文 category，无需手动映射
   const aqiCategory = aqiIndex ? aqiIndex.category : "";
   const aqiColor = aqiIndex
