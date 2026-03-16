@@ -139,56 +139,100 @@ export default async function (ctx) {
     return `${scale}级大风`;
   }
 
-  // 下载和风天气 SVG 图标并转为 base64 data URI
-  // 图标 URL: https://icons.qweather.com/assets/icons/{icon}.svg
-  async function fetchWeatherIcon(iconCode) {
-    const cacheKey = `qw_icon_${iconCode}`;
-    const cached = ctx.storage.get(cacheKey);
-    if (cached) return cached;
-    try {
-      const resp = await ctx.http.get(
-        `https://icons.qweather.com/assets/icons/${iconCode}.svg`
-      );
-      // 用 arrayBuffer 读取原始字节，避免 btoa 在 Unicode 字符上报错
-      const buf = await resp.arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      let binary = "";
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const b64 = btoa(binary);
-      const dataUri = `data:image/svg+xml;base64,${b64}`;
-      ctx.storage.set(cacheKey, dataUri);
-      return dataUri;
-    } catch {
-      return null;
-    }
-  }
-
-  // SF Symbol 降级（仅锁屏或图标加载失败时使用）
-  function sfSymbolFallback(iconCode) {
+  // 和风天气图标代码 → SF Symbol 完整映射
+  function weatherSFSymbol(iconCode) {
     const code = parseInt(iconCode, 10);
-    if (code === 100 || code === 150) return "sun.max.fill";
-    if ([101, 102, 103, 151, 152, 153].includes(code)) return "cloud.sun.fill";
-    if (code === 104) return "cloud.fill";
-    if (code >= 300 && code < 400) return "cloud.rain.fill";
-    if (code >= 400 && code < 500) return "snowflake";
-    if (code >= 500 && code < 600) return "cloud.fog.fill";
-    if (code >= 200 && code < 300) return "wind";
-    return "cloud.fill";
+    const map = {
+      // 晴
+      100: "sun.max.fill",
+      150: "moon.stars.fill",
+      // 多云 / 少云 / 晴间多云
+      101: "cloud.sun.fill",
+      102: "cloud.sun.fill",
+      103: "cloud.sun.fill",
+      151: "cloud.moon.fill",
+      152: "cloud.moon.fill",
+      153: "cloud.moon.fill",
+      // 阴
+      104: "cloud.fill",
+      // 阵雨
+      300: "cloud.sun.rain.fill",
+      301: "cloud.heavyrain.fill",
+      350: "cloud.moon.rain.fill",
+      351: "cloud.heavyrain.fill",
+      // 雷阵雨
+      302: "cloud.bolt.rain.fill",
+      303: "cloud.bolt.rain.fill",
+      // 雷阵雨伴冰雹
+      304: "cloud.hail.fill",
+      // 小雨 / 中雨 / 大雨
+      305: "cloud.drizzle.fill",
+      306: "cloud.rain.fill",
+      307: "cloud.heavyrain.fill",
+      308: "cloud.heavyrain.fill",
+      // 毛毛雨
+      309: "cloud.drizzle.fill",
+      // 暴雨系列
+      310: "cloud.heavyrain.fill",
+      311: "cloud.heavyrain.fill",
+      312: "cloud.heavyrain.fill",
+      // 冻雨
+      313: "cloud.sleet.fill",
+      // 小到中 / 中到大 / 大到暴
+      314: "cloud.rain.fill",
+      315: "cloud.rain.fill",
+      316: "cloud.heavyrain.fill",
+      317: "cloud.heavyrain.fill",
+      318: "cloud.heavyrain.fill",
+      // 雨（通用）
+      399: "cloud.rain.fill",
+      // 小雪 / 中雪 / 大雪 / 暴雪
+      400: "cloud.snow.fill",
+      401: "cloud.snow.fill",
+      402: "cloud.snow.fill",
+      403: "cloud.snow.fill",
+      // 雨夹雪
+      404: "cloud.sleet.fill",
+      405: "cloud.sleet.fill",
+      406: "cloud.sleet.fill",
+      456: "cloud.sleet.fill",
+      // 阵雪
+      407: "cloud.snow.fill",
+      457: "cloud.snow.fill",
+      // 小到中雪 / 中到大雪 / 大到暴雪
+      408: "cloud.snow.fill",
+      409: "cloud.snow.fill",
+      410: "cloud.snow.fill",
+      // 雪（通用）
+      499: "cloud.snow.fill",
+      // 雾
+      500: "cloud.fog.fill",
+      501: "cloud.fog.fill",
+      509: "cloud.fog.fill",
+      510: "cloud.fog.fill",
+      514: "cloud.fog.fill",
+      515: "cloud.fog.fill",
+      // 霾
+      502: "sun.haze.fill",
+      511: "sun.haze.fill",
+      512: "sun.haze.fill",
+      513: "sun.haze.fill",
+      // 扬沙 / 浮尘 / 沙尘暴
+      503: "sun.dust.fill",
+      504: "sun.dust.fill",
+      507: "tornado",
+      508: "tornado",
+      // 热 / 冷
+      900: "thermometer.sun.fill",
+      901: "thermometer.snowflake",
+      // 未知
+      999: "cloud.fill",
+    };
+    return map[code] || "cloud.fill";
   }
 
   const refreshTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
-  // 预加载图标（锁屏尺寸不需要，跳过以节省时间）
-  const isAccessory =
-    ctx.widgetFamily === "accessoryCircular" ||
-    ctx.widgetFamily === "accessoryRectangular" ||
-    ctx.widgetFamily === "accessoryInline";
-
-  const weatherIconSrc = isAccessory
-    ? `sf-symbol:${sfSymbolFallback(now.icon)}`
-    : (await fetchWeatherIcon(now.icon)) || `sf-symbol:${sfSymbolFallback(now.icon)}`;
+  const weatherIconSrc = `sf-symbol:${weatherSFSymbol(now.icon)}`;
 
   // ── accessoryRectangular（锁定屏幕矩形）────────────────────
   if (ctx.widgetFamily === "accessoryRectangular") {
@@ -207,6 +251,7 @@ export default async function (ctx) {
             {
               type: "image",
               src: weatherIconSrc,
+              color: "#FFD60A",
               width: 16,
               height: 16,
             },
@@ -243,6 +288,7 @@ export default async function (ctx) {
             {
               type: "image",
               src: weatherIconSrc,
+              color: "#FFD60A",
               width: 20,
               height: 20,
             },
