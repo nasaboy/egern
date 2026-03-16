@@ -113,12 +113,11 @@ export default async function (ctx) {
     ? `rgba(${aqiIndex.color.red},${aqiIndex.color.green},${aqiIndex.color.blue},1)`
     : "#8E8E93";
 
-  // 风力等级文字
-  function windDesc(scale) {
+  // 风力等级 + 风速
+  function windDesc(scale, speed) {
     const n = parseInt(scale, 10);
-    if (n <= 1) return "微风";
-    if (n <= 3) return `${scale}级`;
-    return `${scale}级大风`;
+    const level = n <= 1 ? "微风" : `${scale}级`;
+    return speed ? `${level} ${speed}km/h` : level;
   }
 
   // 和风天气图标代码 → SF Symbol 完整映射
@@ -137,7 +136,7 @@ export default async function (ctx) {
       153: "cloud.moon.fill",
       // 阴
       104: "cloud.fill",
-      // 阵雨
+      // 阵雨（白天/夜间）
       300: "cloud.sun.rain.fill",
       301: "cloud.heavyrain.fill",
       350: "cloud.moon.rain.fill",
@@ -147,13 +146,13 @@ export default async function (ctx) {
       303: "cloud.bolt.rain.fill",
       // 雷阵雨伴冰雹
       304: "cloud.hail.fill",
-      // 小雨 / 中雨 / 大雨
+      // 小雨 / 毛毛雨
       305: "cloud.drizzle.fill",
+      309: "cloud.drizzle.fill",
+      // 中雨 / 大雨
       306: "cloud.rain.fill",
       307: "cloud.heavyrain.fill",
       308: "cloud.heavyrain.fill",
-      // 毛毛雨
-      309: "cloud.drizzle.fill",
       // 暴雨系列
       310: "cloud.heavyrain.fill",
       311: "cloud.heavyrain.fill",
@@ -199,9 +198,10 @@ export default async function (ctx) {
       511: "sun.haze.fill",
       512: "sun.haze.fill",
       513: "sun.haze.fill",
-      // 扬沙 / 浮尘 / 沙尘暴
+      // 扬沙 / 浮尘
       503: "sun.dust.fill",
       504: "sun.dust.fill",
+      // 沙尘暴
       507: "tornado",
       508: "tornado",
       // 热 / 冷
@@ -503,7 +503,7 @@ export default async function (ctx) {
             },
             {
               type: "text",
-              text: windDesc(now.windScale),
+              text: windDesc(now.windScale, now.windSpeed),
               font: { size: "caption1", weight: "semibold" },
               textColor: "#FFFFFF",
             },
@@ -656,6 +656,90 @@ export default async function (ctx) {
                   {
                     type: "text",
                     text: "大气压强",
+                    font: { size: "caption2" },
+                    textColor: "#FFFFFF66",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      { type: "spacer", length: 8 },
+      {
+        type: "stack",
+        direction: "row",
+        gap: 8,
+        children: [
+          {
+            type: "stack",
+            direction: "row",
+            alignItems: "center",
+            flex: 1,
+            gap: 6,
+            backgroundColor: "#FFFFFF12",
+            borderRadius: 10,
+            padding: [8, 10, 8, 10],
+            children: [
+              {
+                type: "image",
+                src: "sf-symbol:cloud.fill",
+                color: "#AADEFC",
+                width: 18,
+                height: 18,
+              },
+              {
+                type: "stack",
+                direction: "column",
+                gap: 1,
+                children: [
+                  {
+                    type: "text",
+                    text: now.cloud != null && now.cloud !== "" ? `${now.cloud}%` : "—",
+                    font: { size: "footnote", weight: "semibold" },
+                    textColor: "#FFFFFF",
+                  },
+                  {
+                    type: "text",
+                    text: "云量",
+                    font: { size: "caption2" },
+                    textColor: "#FFFFFF66",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "stack",
+            direction: "row",
+            alignItems: "center",
+            flex: 1,
+            gap: 6,
+            backgroundColor: "#FFFFFF12",
+            borderRadius: 10,
+            padding: [8, 10, 8, 10],
+            children: [
+              {
+                type: "image",
+                src: "sf-symbol:thermometer.medium",
+                color: "#A8F0C0",
+                width: 18,
+                height: 18,
+              },
+              {
+                type: "stack",
+                direction: "column",
+                gap: 1,
+                children: [
+                  {
+                    type: "text",
+                    text: now.dew != null && now.dew !== "" ? `${now.dew}°` : "—",
+                    font: { size: "footnote", weight: "semibold" },
+                    textColor: "#FFFFFF",
+                  },
+                  {
+                    type: "text",
+                    text: "露点温度",
                     font: { size: "caption2" },
                     textColor: "#FFFFFF66",
                   },
