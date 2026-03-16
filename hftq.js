@@ -113,11 +113,17 @@ export default async function (ctx) {
     ? `rgba(${aqiIndex.color.red},${aqiIndex.color.green},${aqiIndex.color.blue},1)`
     : "#8E8E93";
 
-  // 风力等级 + 风速
-  function windDesc(scale, speed) {
+  // 风力等级术语（按蒲福风级文档，0-17级完整映射）
+  function windLevelName(scale) {
+    const map = {
+      0: "无风", 1: "软风", 2: "轻风", 3: "微风",
+      4: "和风", 5: "清风", 6: "强风", 7: "疾风",
+      8: "大风", 9: "烈风", 10: "狂风", 11: "暴风",
+      12: "飓风", 13: "台风", 14: "强台风", 15: "强台风",
+      16: "超强台风", 17: "超强台风",
+    };
     const n = parseInt(scale, 10);
-    const level = n <= 1 ? "微风" : `${scale}级`;
-    return speed ? `${level} ${speed}km/h` : level;
+    return map[n] ?? `${scale}级`;
   }
 
   // 和风天气图标代码 → SF Symbol 完整映射
@@ -503,13 +509,13 @@ export default async function (ctx) {
             },
             {
               type: "text",
-              text: windDesc(now.windScale, now.windSpeed),
+              text: windLevelName(now.windScale),
               font: { size: "caption1", weight: "semibold" },
               textColor: "#FFFFFF",
             },
             {
               type: "text",
-              text: now.windDir,
+              text: `${now.windDir} ${now.windSpeed}km/h`,
               font: { size: "caption2" },
               textColor: "#FFFFFF66",
             },
