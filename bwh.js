@@ -169,7 +169,6 @@ export default async function (ctx) {
     },
     refreshAfter: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     children: [
-      // 标题行
       {
         type: 'stack',
         direction: 'row',
@@ -199,7 +198,6 @@ export default async function (ctx) {
           },
         ],
       },
-      // 节点位置 & IP
       {
         type: 'stack',
         direction: 'row',
@@ -254,7 +252,6 @@ export default async function (ctx) {
           },
         ],
       },
-      // 进度条
       {
         type: 'stack',
         direction: 'row',
@@ -274,7 +271,6 @@ export default async function (ctx) {
             : { type: 'spacer', length: 0 },
         ],
       },
-      // 已用 / 剩余
       {
         type: 'stack',
         direction: 'row',
@@ -325,7 +321,6 @@ export default async function (ctx) {
           },
         ],
       },
-      // 月总量 & 重置日期
       {
         type: 'stack',
         direction: 'row',
