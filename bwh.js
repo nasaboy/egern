@@ -1,8 +1,25 @@
 export default async function (ctx) {
-  const veid = ctx.env.VEID;
+  const veid   = ctx.env.VEID;
   const apiKey = ctx.env.API_KEY;
 
-  // ── 错误兜底布局 ──────────────────────────────────────────
+  // ── 工具函数 ──────────────────────────────────────────────
+  function toGB(bytes) {
+    if (bytes >= 1099511627776) return (bytes / 1099511627776).toFixed(2) + ' TB';
+    return (bytes / 1073741824).toFixed(2) + ' GB';
+  }
+
+  function toGBNum(bytes) {
+    return (bytes / 1073741824).toFixed(1);
+  }
+
+  // 进度颜色：绿 → 橙 → 红
+  function barColor(ratio) {
+    if (ratio >= 0.9) return '#FF453A';
+    if (ratio >= 0.7) return '#FF9F0A';
+    return '#30D158';
+  }
+
+  // 错误兜底
   function errorWidget(msg) {
     return {
       type: 'widget',
@@ -13,31 +30,29 @@ export default async function (ctx) {
         endPoint: { x: 1, y: 1 },
       },
       padding: 16,
+      gap: 8,
       children: [
         {
           type: 'image',
           src: 'sf-symbol:exclamationmark.triangle.fill',
           color: '#FF9F0A',
-          width: 20,
-          height: 20,
+          width: 22,
+          height: 22,
         },
-        { type: 'spacer', length: 6 },
         {
           type: 'text',
           text: msg,
           font: { size: 'footnote' },
           textColor: '#FF453A',
-          maxLines: 2,
+          maxLines: 3,
         },
       ],
-      gap: 4,
     };
   }
 
-  if (!veid || !apiKey) {
-    return errorWidget('请在 env 中设置 VEID 和 API_KEY');
-  }
+  if (!veid || !apiKey) return errorWidget('请在 env 中设置 VEID 和 API_KEY');
 
+  // ── 请求 API ──────────────────────────────────────────────
   let info;
   try {
     const resp = await ctx.http.get(
@@ -49,78 +64,41 @@ export default async function (ctx) {
     return errorWidget('请求失败: ' + e.message);
   }
 
-  if (info.error !== 0) {
-    return errorWidget('API 错误: ' + (info.message || info.error));
-  }
+  if (info.error !== 0) return errorWidget('API 错误 #' + info.error);
 
   // ── 数据解析 ──────────────────────────────────────────────
-  const totalBytes = info.plan_monthly_data;          // 套餐总量（字节）
+  const totalBytes = info.plan_monthly_data;          // 套餐流量（字节）
   const usedBytes  = info.data_counter;               // 已用（字节）
   const resetTs    = info.data_next_reset;            // 重置时间戳（秒）
+  const resetISO   = new Date(resetTs * 1000).toISOString();
 
-  function toGB(bytes) {
-    return (bytes / 1073741824).toFixed(2);
-  }
+  const ratio      = Math.min(usedBytes / totalBytes, 1);
+  const pct        = (ratio * 100).toFixed(1);
+  const color      = barColor(ratio);
 
-  const usedGB  = toGB(usedBytes);
-  const totalGB = toGB(totalBytes);
-  const ratio   = Math.min(usedBytes / totalBytes, 1); // 0~1
-  const pct     = (ratio * 100).toFixed(1);
+  const usedStr    = toGB(usedBytes);
+  const totalStr   = toGB(totalBytes);
+  const remainStr  = toGB(Math.max(totalBytes - usedBytes, 0));
 
-  const resetDate = new Date(resetTs * 1000).toISOString();
+  // 机房简称：取括号前内容最后一段，去掉多余空格
+  const dc         = info.node_datacenter || info.node_location || '';
+  const dcShort    = (dc.split('(')[0] || dc).trim().replace(/^US:\s*/i, '');
 
-  // 进度条颜色：绿 → 橙 → 红
-  let barColor = '#30D158';
-  if (ratio >= 0.9)      barColor = '#FF453A';
-  else if (ratio >= 0.7) barColor = '#FF9F0A';
+  const ip         = (info.ip_addresses || [])[0] || '—';
+  const suspended  = info.suspended ? '⚠️ 已暂停' : null;
 
-  // ── 锁屏矩形（accessoryRectangular）─────────────────────
-  if (ctx.widgetFamily === 'accessoryRectangular') {
-    return {
-      type: 'widget',
-      padding: [2, 4, 2, 4],
-      gap: 2,
-      children: [
-        {
-          type: 'text',
-          text: `🖥 BWH 流量`,
-          font: { size: 'headline', weight: 'bold' },
-          maxLines: 1,
-        },
-        {
-          type: 'text',
-          text: `已用 ${usedGB} / ${totalGB} GB (${pct}%)`,
-          font: { size: 'body' },
-          maxLines: 1,
-        },
-        {
-          type: 'text',
-          text: `重置于`,
-          font: { size: 'footnote' },
-          maxLines: 1,
-        },
-        {
-          type: 'date',
-          date: resetDate,
-          format: 'relative',
-          font: { size: 'footnote' },
-          maxLines: 1,
-        },
-      ],
-    };
-  }
-
-  // ── 锁屏圆形（accessoryCircular）────────────────────────
+  // ── 锁屏圆形 ─────────────────────────────────────────────
   if (ctx.widgetFamily === 'accessoryCircular') {
     return {
       type: 'widget',
-      padding: 4,
-      gap: 2,
+      padding: 2,
+      gap: 1,
       children: [
         {
           type: 'text',
-          text: `${pct}%`,
+          text: pct + '%',
           font: { size: 'title2', weight: 'bold' },
+          textColor: color,
           textAlign: 'center',
           maxLines: 1,
         },
@@ -128,6 +106,7 @@ export default async function (ctx) {
           type: 'text',
           text: 'BWH',
           font: { size: 'caption2' },
+          textColor: '#FFFFFFAA',
           textAlign: 'center',
           maxLines: 1,
         },
@@ -135,33 +114,94 @@ export default async function (ctx) {
     };
   }
 
+  // ── 锁屏矩形 ─────────────────────────────────────────────
+  if (ctx.widgetFamily === 'accessoryRectangular') {
+    return {
+      type: 'widget',
+      padding: [2, 4, 2, 4],
+      gap: 3,
+      children: [
+        {
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 5,
+          children: [
+            {
+              type: 'image',
+              src: 'sf-symbol:server.rack',
+              width: 12,
+              height: 12,
+            },
+            {
+              type: 'text',
+              text: 'BWH 流量监控',
+              font: { size: 'headline', weight: 'bold' },
+              maxLines: 1,
+            },
+          ],
+        },
+        {
+          type: 'text',
+          text: `已用 ${usedStr} / ${totalStr}  (${pct}%)`,
+          font: { size: 'body' },
+          maxLines: 1,
+          minScale: 0.8,
+        },
+        {
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 4,
+          children: [
+            {
+              type: 'text',
+              text: '重置：',
+              font: { size: 'footnote' },
+            },
+            {
+              type: 'date',
+              date: resetISO,
+              format: 'relative',
+              font: { size: 'footnote', weight: 'medium' },
+            },
+          ],
+        },
+      ],
+    };
+  }
+
   // ── 主屏 Small ────────────────────────────────────────────
   if (ctx.widgetFamily === 'systemSmall') {
+    const BAR = 10;
+    const f   = Math.round(ratio * BAR);
+    const bar = '█'.repeat(f) + '░'.repeat(BAR - f);
+
     return {
       type: 'widget',
       backgroundGradient: {
         type: 'linear',
-        colors: ['#0f2027', '#203a43', '#2c5364'],
+        colors: ['#0d1b2a', '#1b2a3b', '#162032'],
         stops: [0, 0.5, 1],
         startPoint: { x: 0, y: 0 },
         endPoint: { x: 1, y: 1 },
       },
       padding: 14,
-      gap: 8,
+      gap: 6,
       children: [
-        // 标题行
+        // 标题
         {
           type: 'stack',
           direction: 'row',
           alignItems: 'center',
-          gap: 6,
+          gap: 5,
           children: [
             {
               type: 'image',
               src: 'sf-symbol:server.rack',
               color: '#64D2FF',
-              width: 14,
-              height: 14,
+              width: 13,
+              height: 13,
             },
             {
               type: 'text',
@@ -173,166 +213,273 @@ export default async function (ctx) {
             },
           ],
         },
-        // 百分比大字
+        // 大百分比
         {
           type: 'text',
-          text: `${pct}%`,
+          text: pct + '%',
           font: { size: 'title', weight: 'bold' },
-          textColor: barColor,
+          textColor: color,
           maxLines: 1,
         },
-        // 用量
+        // 字符进度条
         {
           type: 'text',
-          text: `${usedGB} / ${totalGB} GB`,
-          font: { size: 'footnote', weight: 'medium' },
+          text: bar,
+          font: { size: 10, weight: 'regular', family: 'Menlo' },
+          textColor: color,
+          maxLines: 1,
+        },
+        // 已用/总量
+        {
+          type: 'text',
+          text: usedStr + ' / ' + totalStr,
+          font: { size: 'caption2', weight: 'medium' },
           textColor: '#FFFFFFCC',
           maxLines: 1,
           minScale: 0.8,
         },
         { type: 'spacer' },
-        // 重置标签
+        // 重置倒计时
         {
-          type: 'text',
-          text: '距重置',
-          font: { size: 'caption2' },
-          textColor: '#FFFFFF66',
-          maxLines: 1,
-        },
-        {
-          type: 'date',
-          date: resetDate,
-          format: 'relative',
-          font: { size: 'caption1', weight: 'medium' },
-          textColor: '#FFFFFFCC',
-          maxLines: 1,
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 4,
+          children: [
+            {
+              type: 'image',
+              src: 'sf-symbol:arrow.clockwise',
+              color: '#FFFFFF55',
+              width: 10,
+              height: 10,
+            },
+            {
+              type: 'date',
+              date: resetISO,
+              format: 'relative',
+              font: { size: 'caption2' },
+              textColor: '#FFFFFF88',
+              maxLines: 1,
+            },
+          ],
         },
       ],
     };
   }
 
-  // ── 主屏 Medium / Large（默认）───────────────────────────
-  const BAR_TOTAL = 20; // 字符进度条长度
-  const filled = Math.round(ratio * BAR_TOTAL);
-  const empty  = BAR_TOTAL - filled;
-  const barStr = '█'.repeat(filled) + '░'.repeat(empty);
+  // ── 主屏 Medium（默认）───────────────────────────────────
+  const BAR_LEN = 22;
+  const filled  = Math.round(ratio * BAR_LEN);
+  const barStr  = '█'.repeat(filled) + '░'.repeat(BAR_LEN - filled);
+
+  const medChildren = [
+    // 标题行
+    {
+      type: 'stack',
+      direction: 'row',
+      alignItems: 'center',
+      gap: 8,
+      children: [
+        {
+          type: 'image',
+          src: 'sf-symbol:server.rack',
+          color: '#64D2FF',
+          width: 18,
+          height: 18,
+        },
+        {
+          type: 'text',
+          text: 'BandwagonHost',
+          font: { size: 'headline', weight: 'bold' },
+          textColor: '#FFFFFF',
+          flex: 1,
+          maxLines: 1,
+        },
+        // 暂停警告（有则显示）
+        ...(suspended ? [{
+          type: 'text',
+          text: suspended,
+          font: { size: 'caption1', weight: 'semibold' },
+          textColor: '#FF453A',
+          maxLines: 1,
+        }] : [{
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 4,
+          children: [
+            {
+              type: 'image',
+              src: 'sf-symbol:circle.fill',
+              color: '#30D158',
+              width: 8,
+              height: 8,
+            },
+            {
+              type: 'text',
+              text: '运行中',
+              font: { size: 'caption1' },
+              textColor: '#30D158',
+              maxLines: 1,
+            },
+          ],
+        }]),
+      ],
+    },
+
+    // 机房 & IP
+    {
+      type: 'stack',
+      direction: 'row',
+      alignItems: 'center',
+      gap: 6,
+      children: [
+        {
+          type: 'image',
+          src: 'sf-symbol:location.fill',
+          color: '#FFFFFF44',
+          width: 11,
+          height: 11,
+        },
+        {
+          type: 'text',
+          text: dcShort,
+          font: { size: 'caption1' },
+          textColor: '#FFFFFF66',
+          flex: 1,
+          maxLines: 1,
+          minScale: 0.8,
+        },
+        {
+          type: 'text',
+          text: ip,
+          font: { size: 'caption1', family: 'Menlo' },
+          textColor: '#FFFFFF55',
+          maxLines: 1,
+        },
+      ],
+    },
+
+    // 进度条
+    {
+      type: 'text',
+      text: barStr,
+      font: { size: 11, weight: 'regular', family: 'Menlo' },
+      textColor: color,
+      maxLines: 1,
+    },
+
+    // 已用 / 总量 / 百分比
+    {
+      type: 'stack',
+      direction: 'row',
+      alignItems: 'center',
+      gap: 4,
+      children: [
+        {
+          type: 'text',
+          text: '已用',
+          font: { size: 'subheadline' },
+          textColor: '#FFFFFF66',
+        },
+        {
+          type: 'text',
+          text: usedStr,
+          font: { size: 'subheadline', weight: 'bold' },
+          textColor: color,
+        },
+        {
+          type: 'text',
+          text: '/ ' + totalStr,
+          font: { size: 'subheadline' },
+          textColor: '#FFFFFF44',
+        },
+        { type: 'spacer' },
+        {
+          type: 'text',
+          text: pct + '%',
+          font: { size: 'title3', weight: 'bold' },
+          textColor: color,
+        },
+      ],
+    },
+
+    // 剩余流量
+    {
+      type: 'stack',
+      direction: 'row',
+      alignItems: 'center',
+      gap: 4,
+      children: [
+        {
+          type: 'image',
+          src: 'sf-symbol:tray.fill',
+          color: '#FFFFFF44',
+          width: 12,
+          height: 12,
+        },
+        {
+          type: 'text',
+          text: '剩余 ' + remainStr,
+          font: { size: 'footnote' },
+          textColor: '#FFFFFF88',
+        },
+        { type: 'spacer' },
+      ],
+    },
+
+    { type: 'spacer' },
+
+    // 重置日期行
+    {
+      type: 'stack',
+      direction: 'row',
+      alignItems: 'center',
+      gap: 6,
+      children: [
+        {
+          type: 'image',
+          src: 'sf-symbol:arrow.clockwise.circle',
+          color: '#FFFFFF44',
+          width: 13,
+          height: 13,
+        },
+        {
+          type: 'text',
+          text: '重置日期：',
+          font: { size: 'footnote' },
+          textColor: '#FFFFFF55',
+        },
+        {
+          type: 'date',
+          date: resetISO,
+          format: 'date',
+          font: { size: 'footnote', weight: 'medium' },
+          textColor: '#FFFFFFCC',
+        },
+        { type: 'spacer' },
+        {
+          type: 'date',
+          date: resetISO,
+          format: 'relative',
+          font: { size: 'footnote' },
+          textColor: '#FFFFFF55',
+        },
+      ],
+    },
+  ];
 
   return {
     type: 'widget',
     backgroundGradient: {
       type: 'linear',
-      colors: ['#0f2027', '#203a43', '#2c5364'],
+      colors: ['#0d1b2a', '#1b2a3b', '#162032'],
       stops: [0, 0.5, 1],
       startPoint: { x: 0, y: 0 },
       endPoint: { x: 1, y: 1 },
     },
-    padding: 18,
-    gap: 10,
-    children: [
-      // 标题行
-      {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 8,
-        children: [
-          {
-            type: 'image',
-            src: 'sf-symbol:server.rack',
-            color: '#64D2FF',
-            width: 20,
-            height: 20,
-          },
-          {
-            type: 'text',
-            text: 'BandwagonHost 流量',
-            font: { size: 'headline', weight: 'bold' },
-            textColor: '#FFFFFF',
-            flex: 1,
-            maxLines: 1,
-          },
-        ],
-      },
-      // 进度条
-      {
-        type: 'text',
-        text: barStr,
-        font: { size: 11, weight: 'regular', family: 'Menlo' },
-        textColor: barColor,
-        maxLines: 1,
-      },
-      // 已用 / 总量
-      {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 6,
-        children: [
-          {
-            type: 'text',
-            text: `已用`,
-            font: { size: 'subheadline' },
-            textColor: '#FFFFFF99',
-          },
-          {
-            type: 'text',
-            text: `${usedGB} GB`,
-            font: { size: 'subheadline', weight: 'semibold' },
-            textColor: barColor,
-          },
-          {
-            type: 'text',
-            text: `/ ${totalGB} GB`,
-            font: { size: 'subheadline' },
-            textColor: '#FFFFFF66',
-          },
-          { type: 'spacer' },
-          {
-            type: 'text',
-            text: `${pct}%`,
-            font: { size: 'title3', weight: 'bold' },
-            textColor: barColor,
-          },
-        ],
-      },
-      { type: 'spacer' },
-      // 重置时间行
-      {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 6,
-        children: [
-          {
-            type: 'image',
-            src: 'sf-symbol:arrow.clockwise.circle',
-            color: '#FFFFFF66',
-            width: 14,
-            height: 14,
-          },
-          {
-            type: 'text',
-            text: '重置日期：',
-            font: { size: 'footnote' },
-            textColor: '#FFFFFF66',
-          },
-          {
-            type: 'date',
-            date: resetDate,
-            format: 'date',
-            font: { size: 'footnote', weight: 'medium' },
-            textColor: '#FFFFFFCC',
-          },
-          { type: 'spacer' },
-          {
-            type: 'date',
-            date: resetDate,
-            format: 'relative',
-            font: { size: 'footnote' },
-            textColor: '#FFFFFF66',
-          },
-        ],
-      },
-    ],
+    padding: 16,
+    gap: 8,
+    children: medChildren,
   };
 }
