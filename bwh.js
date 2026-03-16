@@ -64,7 +64,7 @@ export default async function (ctx) {
         },
         {
           type: 'text',
-          text: `重置: ${resetStr}`,
+          text: `下次重置: ${resetStr}`,
           font: { size: 'caption2' },
         },
       ],
@@ -132,7 +132,7 @@ export default async function (ctx) {
           direction: 'row',
           height: 5,
           borderRadius: 3,
-          backgroundColor: '#FFFFFF22',
+          backgroundColor: '#FFFFFF15',
           children: [
             {
               type: 'stack',
@@ -149,7 +149,7 @@ export default async function (ctx) {
         },
         {
           type: 'text',
-          text: `重置: ${resetStr}`,
+          text: `下次重置: ${resetStr}`,
           font: { size: 'caption2' },
           textColor: '#FFFFFF55',
         },
@@ -257,7 +257,7 @@ export default async function (ctx) {
         direction: 'row',
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#FFFFFF22',
+        backgroundColor: '#FFFFFF15',
         children: [
           {
             type: 'stack',
@@ -342,7 +342,7 @@ export default async function (ctx) {
               },
               {
                 type: 'text',
-                text: `月总量 ${toGB(total)}`,
+                text: `总量 ${toGB(total)}`,
                 font: { size: 'caption1' },
                 textColor: '#FFFFFF77',
               },
@@ -363,7 +363,7 @@ export default async function (ctx) {
               },
               {
                 type: 'text',
-                text: `重置于 ${resetStr}`,
+                text: `下次重置 ${resetStr}`,
                 font: { size: 'caption1' },
                 textColor: '#FFFFFF99',
               },
