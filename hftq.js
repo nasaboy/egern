@@ -404,9 +404,8 @@ export default async function (ctx) {
           ],
         },
         {
-          type: "date",
-          date: weather.updateTime.replace(/T(\d{2}:\d{2})([+-])/, "T$1:00$2"),
-          format: "time",
+          type: "text",
+          text: weather.updateTime.slice(11, 16),
           font: { size: "caption2" },
           textColor: "#FFFFFF66",
         },
