@@ -43,9 +43,6 @@ export default async function (ctx) {
 
   const barColor = usedPercent >= 90 ? '#FF3B30' : usedPercent >= 70 ? '#FF9500' : '#30D158';
 
-  const usedFlex = Math.round(usedPercent);
-  const remainFlex = 100 - usedFlex;
-
   if (ctx.widgetFamily === 'accessoryRectangular') {
     return {
       type: 'widget',
@@ -126,26 +123,6 @@ export default async function (ctx) {
           text: `${toGB(used)} / ${toGB(total)}`,
           font: { size: 'caption1' },
           textColor: '#FFFFFFAA',
-        },
-        {
-          type: 'stack',
-          direction: 'row',
-          height: 5,
-          borderRadius: 3,
-          backgroundColor: '#FFFFFF15',
-          children: [
-            {
-              type: 'stack',
-              flex: usedFlex,
-              backgroundColor: barColor,
-              borderRadius: 3,
-              children: [],
-            },
-            {
-              type: 'spacer',
-              length: remainFlex > 0 ? undefined : 0,
-            },
-          ],
         },
         {
           type: 'text',
@@ -250,25 +227,6 @@ export default async function (ctx) {
               },
             ],
           },
-        ],
-      },
-      {
-        type: 'stack',
-        direction: 'row',
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#FFFFFF15',
-        children: [
-          {
-            type: 'stack',
-            flex: usedFlex || 1,
-            backgroundColor: barColor,
-            borderRadius: 4,
-            children: [],
-          },
-          remainFlex > 0
-            ? { type: 'spacer' }
-            : { type: 'spacer', length: 0 },
         ],
       },
       {
