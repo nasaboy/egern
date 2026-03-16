@@ -1,5 +1,8 @@
-// VEID: 你的 BandwagonHost VPS ID
-// API_KEY: 你的 BandwagonHost API Key
+// BWH流量小组件 for Egern
+// 环境变量（在 widgets env 中配置）
+// BWH管理后台KiwiVM里的API里可以找到
+// VEID: 你的 BandwagonHost VPS ID,比如：191977830
+// API_KEY: 你的 BandwagonHost API Key,比如：private_xxxxx
 
 export default async function (ctx) {
   const veid   = ctx.env.VEID;
