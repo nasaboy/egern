@@ -310,10 +310,10 @@ export default async function (ctx) {
       refreshAfter: refreshTime,
       backgroundGradient: {
         type: "linear",
-        colors: ["#1D3461", "#1F6FAE"],
+        colors: ["#3A7BD5", "#6AAFE6"],
         stops: [0, 1],
         startPoint: { x: 0, y: 0 },
-        endPoint: { x: 1, y: 1 },
+        endPoint: { x: 0, y: 1 },
       },
       padding: 14,
       gap: 4,
@@ -334,6 +334,7 @@ export default async function (ctx) {
             {
               type: "image",
               src: weatherIconSrc,
+              color: "#FFFFFF",
               width: 28,
               height: 28,
             },
@@ -398,7 +399,7 @@ export default async function (ctx) {
             {
               type: "image",
               src: "sf-symbol:location.fill",
-              color: "#64D2FF",
+              color: "#AADEFC",
               width: 12,
               height: 12,
             },
@@ -431,6 +432,7 @@ export default async function (ctx) {
         {
           type: "image",
           src: weatherIconSrc,
+          color: "#FFFFFF",
           width: 52,
           height: 52,
         },
@@ -481,7 +483,7 @@ export default async function (ctx) {
             {
               type: "image",
               src: "sf-symbol:humidity.fill",
-              color: "#64D2FF",
+              color: "#AADEFC",
               width: 16,
               height: 16,
             },
@@ -510,7 +512,7 @@ export default async function (ctx) {
             {
               type: "image",
               src: "sf-symbol:wind",
-              color: "#30D158",
+              color: "#A8F0C0",
               width: 16,
               height: 16,
             },
@@ -569,7 +571,7 @@ export default async function (ctx) {
             {
               type: "image",
               src: "sf-symbol:eye.fill",
-              color: "#FFD60A",
+              color: "#FFE680",
               width: 16,
               height: 16,
             },
@@ -613,7 +615,7 @@ export default async function (ctx) {
               {
                 type: "image",
                 src: "sf-symbol:cloud.rain.fill",
-                color: "#5AC8FA",
+                color: "#AADEFC",
                 width: 18,
                 height: 18,
               },
@@ -651,7 +653,7 @@ export default async function (ctx) {
               {
                 type: "image",
                 src: "sf-symbol:gauge.medium",
-                color: "#FF9F0A",
+                color: "#FFE680",
                 width: 18,
                 height: 18,
               },
@@ -694,10 +696,10 @@ export default async function (ctx) {
     refreshAfter: refreshTime,
     backgroundGradient: {
       type: "linear",
-      colors: ["#0A1628", "#0D2137", "#133B5C"],
+      colors: ["#2E86C1", "#5DADE2", "#85C1E9"],
       stops: [0, 0.5, 1],
       startPoint: { x: 0, y: 0 },
-      endPoint: { x: 1, y: 1 },
+      endPoint: { x: 0, y: 1 },
     },
     padding: 16,
     gap: 0,
