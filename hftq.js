@@ -405,7 +405,7 @@ export default async function (ctx) {
         },
         {
           type: "date",
-          date: new Date().toISOString(),
+          date: weather.updateTime,
           format: "time",
           font: { size: "caption2" },
           textColor: "#FFFFFF66",
