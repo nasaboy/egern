@@ -85,7 +85,7 @@ export default async function (ctx) {
         { headers }
       ),
       ctx.http.get(
-        `https://${host}/airquality/v1/current/${geoInfo.lat}/${geoInfo.lon}`,
+        `https://${host}/airquality/v1/current/${geoInfo.lat}/${geoInfo.lon}?lang=zh`,
         { headers }
       ),
     ]);
@@ -102,31 +102,13 @@ export default async function (ctx) {
   const now = weather.now;
 
   // AQI：中国标准优先 cn-mee-1h（实时）→ cn-mee（日均）→ 第一条兜底
-  // 注意：中国地区不返回 QAQI，code 为 cn-mee / cn-mee-1h
   const aqiIndex =
     (air.indexes || []).find((i) => i.code === "cn-mee-1h") ||
     (air.indexes || []).find((i) => i.code === "cn-mee") ||
     (air.indexes || [])[0];
   const aqiVal = aqiIndex ? aqiIndex.aqiDisplay : "—";
-
-  // cn-mee / cn-mee-1h 的 category 为英文，按文档映射为中文
-  // 其他地区直接使用原始 category
-  const cnCategoryMap = {
-    Excellent: "优",
-    Good: "良",
-    "Lightly Polluted": "轻度污染",
-    "Moderately Polluted": "中度污染",
-    "Heavily Polluted": "重度污染",
-    "Severely Polluted": "严重污染",
-  };
-  const rawCategory = aqiIndex ? aqiIndex.category : "";
-  const isCnAqi =
-    aqiIndex &&
-    (aqiIndex.code === "cn-mee" || aqiIndex.code === "cn-mee-1h");
-  const aqiCategory = isCnAqi
-    ? cnCategoryMap[rawCategory] || rawCategory
-    : rawCategory;
-
+  // lang=zh 时 API 直接返回中文 category，无需手动映射
+  const aqiCategory = aqiIndex ? aqiIndex.category : "";
   const aqiColor = aqiIndex
     ? `rgba(${aqiIndex.color.red},${aqiIndex.color.green},${aqiIndex.color.blue},1)`
     : "#8E8E93";
