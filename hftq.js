@@ -149,9 +149,14 @@ export default async function (ctx) {
       const resp = await ctx.http.get(
         `https://icons.qweather.com/assets/icons/${iconCode}.svg`
       );
-      const svgText = await resp.text();
-      // 转为 base64 data URI
-      const b64 = btoa(unescape(encodeURIComponent(svgText)));
+      // 用 arrayBuffer 读取原始字节，避免 btoa 在 Unicode 字符上报错
+      const buf = await resp.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = "";
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const b64 = btoa(binary);
       const dataUri = `data:image/svg+xml;base64,${b64}`;
       ctx.storage.set(cacheKey, dataUri);
       return dataUri;
