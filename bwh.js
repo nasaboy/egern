@@ -1,48 +1,80 @@
 export default async function (ctx) {
-  const veid = ctx.env.veid;
-  const api_key = ctx.env.api_key;
+  const veid = ctx.env.VEID;
+  const apiKey = ctx.env.API_KEY;
 
-  const apiUrl = `https://api.64clouds.com/v1/getServiceInfo?veid=${veid}&api_key=${api_key}`;
-
-  let data;
-  try {
-    const resp = await ctx.http.get(apiUrl);
-    data = await resp.json();
-  } catch (e) {
+  // ── 错误兜底布局 ──────────────────────────────────────────
+  function errorWidget(msg) {
     return {
       type: 'widget',
+      backgroundGradient: {
+        type: 'linear',
+        colors: ['#1a1a2e', '#16213e'],
+        startPoint: { x: 0, y: 0 },
+        endPoint: { x: 1, y: 1 },
+      },
       padding: 16,
-      backgroundColor: '#1C1C1E',
       children: [
         {
+          type: 'image',
+          src: 'sf-symbol:exclamationmark.triangle.fill',
+          color: '#FF9F0A',
+          width: 20,
+          height: 20,
+        },
+        { type: 'spacer', length: 6 },
+        {
           type: 'text',
-          text: '⚠️ 请求失败',
-          font: { size: 'headline', weight: 'bold' },
-          textColor: '#FF3B30',
+          text: msg,
+          font: { size: 'footnote' },
+          textColor: '#FF453A',
+          maxLines: 2,
         },
       ],
+      gap: 4,
     };
   }
 
-  const used = data.data_counter;
-  const total = data.plan_monthly_data;
-  const remaining = Math.max(total - used, 0);
-  const usedPercent = Math.min((used / total) * 100, 100);
-
-  function toGB(bytes) {
-    return (bytes / 1024 ** 3).toFixed(2) + ' GB';
+  if (!veid || !apiKey) {
+    return errorWidget('请在 env 中设置 VEID 和 API_KEY');
   }
 
-  const resetDate = new Date(data.data_next_reset * 1000);
-  const resetStr = resetDate.getFullYear() + '-'
-    + String(resetDate.getMonth() + 1).padStart(2, '0') + '-'
-    + String(resetDate.getDate()).padStart(2, '0');
+  let info;
+  try {
+    const resp = await ctx.http.get(
+      `https://api.64clouds.com/v1/getServiceInfo?veid=${veid}&api_key=${apiKey}`,
+      { timeout: 10000 }
+    );
+    info = await resp.json();
+  } catch (e) {
+    return errorWidget('请求失败: ' + e.message);
+  }
 
-  const location = data.node_location;
-  const ip = data.ip_addresses[0] || 'N/A';
+  if (info.error !== 0) {
+    return errorWidget('API 错误: ' + (info.message || info.error));
+  }
 
-  const barColor = usedPercent >= 90 ? '#FF3B30' : usedPercent >= 70 ? '#FF9500' : '#30D158';
+  // ── 数据解析 ──────────────────────────────────────────────
+  const totalBytes = info.plan_monthly_data;          // 套餐总量（字节）
+  const usedBytes  = info.data_counter;               // 已用（字节）
+  const resetTs    = info.data_next_reset;            // 重置时间戳（秒）
 
+  function toGB(bytes) {
+    return (bytes / 1073741824).toFixed(2);
+  }
+
+  const usedGB  = toGB(usedBytes);
+  const totalGB = toGB(totalBytes);
+  const ratio   = Math.min(usedBytes / totalBytes, 1); // 0~1
+  const pct     = (ratio * 100).toFixed(1);
+
+  const resetDate = new Date(resetTs * 1000).toISOString();
+
+  // 进度条颜色：绿 → 橙 → 红
+  let barColor = '#30D158';
+  if (ratio >= 0.9)      barColor = '#FF453A';
+  else if (ratio >= 0.7) barColor = '#FF9F0A';
+
+  // ── 锁屏矩形（accessoryRectangular）─────────────────────
   if (ctx.widgetFamily === 'accessoryRectangular') {
     return {
       type: 'widget',
@@ -51,35 +83,73 @@ export default async function (ctx) {
       children: [
         {
           type: 'text',
-          text: 'BWH 流量',
+          text: `🖥 BWH 流量`,
           font: { size: 'headline', weight: 'bold' },
+          maxLines: 1,
         },
         {
           type: 'text',
-          text: `已用 ${toGB(used)} / ${toGB(total)}`,
-          font: { size: 'caption1' },
+          text: `已用 ${usedGB} / ${totalGB} GB (${pct}%)`,
+          font: { size: 'body' },
+          maxLines: 1,
         },
         {
           type: 'text',
-          text: `下次重置: ${resetStr}`,
-          font: { size: 'caption2' },
+          text: `重置于`,
+          font: { size: 'footnote' },
+          maxLines: 1,
+        },
+        {
+          type: 'date',
+          date: resetDate,
+          format: 'relative',
+          font: { size: 'footnote' },
+          maxLines: 1,
         },
       ],
     };
   }
 
+  // ── 锁屏圆形（accessoryCircular）────────────────────────
+  if (ctx.widgetFamily === 'accessoryCircular') {
+    return {
+      type: 'widget',
+      padding: 4,
+      gap: 2,
+      children: [
+        {
+          type: 'text',
+          text: `${pct}%`,
+          font: { size: 'title2', weight: 'bold' },
+          textAlign: 'center',
+          maxLines: 1,
+        },
+        {
+          type: 'text',
+          text: 'BWH',
+          font: { size: 'caption2' },
+          textAlign: 'center',
+          maxLines: 1,
+        },
+      ],
+    };
+  }
+
+  // ── 主屏 Small ────────────────────────────────────────────
   if (ctx.widgetFamily === 'systemSmall') {
     return {
       type: 'widget',
-      padding: 14,
-      gap: 6,
       backgroundGradient: {
         type: 'linear',
-        colors: ['#1C1C2E', '#0F0F1A'],
+        colors: ['#0f2027', '#203a43', '#2c5364'],
+        stops: [0, 0.5, 1],
         startPoint: { x: 0, y: 0 },
         endPoint: { x: 1, y: 1 },
       },
+      padding: 14,
+      gap: 8,
       children: [
+        // 标题行
         {
           type: 'stack',
           direction: 'row',
@@ -88,64 +158,78 @@ export default async function (ctx) {
           children: [
             {
               type: 'image',
-              src: 'sf-symbol:network',
-              color: '#0A84FF',
+              src: 'sf-symbol:server.rack',
+              color: '#64D2FF',
               width: 14,
               height: 14,
             },
             {
               type: 'text',
               text: 'BandwagonHost',
-              font: { size: 'caption2', weight: 'semibold' },
-              textColor: '#0A84FF',
-              flex: 1,
+              font: { size: 'caption1', weight: 'semibold' },
+              textColor: '#64D2FF',
               maxLines: 1,
               minScale: 0.7,
             },
           ],
         },
+        // 百分比大字
         {
           type: 'text',
-          text: ip,
-          font: { size: 'caption2' },
-          textColor: '#FFFFFF88',
-          maxLines: 1,
-        },
-        { type: 'spacer' },
-        {
-          type: 'text',
-          text: `${usedPercent.toFixed(1)}%`,
+          text: `${pct}%`,
           font: { size: 'title', weight: 'bold' },
           textColor: barColor,
+          maxLines: 1,
         },
+        // 用量
         {
           type: 'text',
-          text: `${toGB(used)} / ${toGB(total)}`,
-          font: { size: 'caption1' },
-          textColor: '#FFFFFFAA',
+          text: `${usedGB} / ${totalGB} GB`,
+          font: { size: 'footnote', weight: 'medium' },
+          textColor: '#FFFFFFCC',
+          maxLines: 1,
+          minScale: 0.8,
         },
+        { type: 'spacer' },
+        // 重置标签
         {
           type: 'text',
-          text: `下次重置: ${resetStr}`,
+          text: '距重置',
           font: { size: 'caption2' },
-          textColor: '#FFFFFF55',
+          textColor: '#FFFFFF66',
+          maxLines: 1,
+        },
+        {
+          type: 'date',
+          date: resetDate,
+          format: 'relative',
+          font: { size: 'caption1', weight: 'medium' },
+          textColor: '#FFFFFFCC',
+          maxLines: 1,
         },
       ],
     };
   }
 
+  // ── 主屏 Medium / Large（默认）───────────────────────────
+  const BAR_TOTAL = 20; // 字符进度条长度
+  const filled = Math.round(ratio * BAR_TOTAL);
+  const empty  = BAR_TOTAL - filled;
+  const barStr = '█'.repeat(filled) + '░'.repeat(empty);
+
   return {
     type: 'widget',
-    padding: 16,
-    gap: 10,
     backgroundGradient: {
       type: 'linear',
-      colors: ['#1C1C2E', '#0F0F1A'],
+      colors: ['#0f2027', '#203a43', '#2c5364'],
+      stops: [0, 0.5, 1],
       startPoint: { x: 0, y: 0 },
       endPoint: { x: 1, y: 1 },
     },
-    refreshAfter: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    padding: 18,
+    gap: 10,
     children: [
+      // 标题行
       {
         type: 'stack',
         direction: 'row',
@@ -155,177 +239,97 @@ export default async function (ctx) {
           {
             type: 'image',
             src: 'sf-symbol:server.rack',
-            color: '#0A84FF',
-            width: 18,
-            height: 18,
+            color: '#64D2FF',
+            width: 20,
+            height: 20,
           },
           {
             type: 'text',
-            text: 'BandwagonHost',
+            text: 'BandwagonHost 流量',
             font: { size: 'headline', weight: 'bold' },
             textColor: '#FFFFFF',
             flex: 1,
             maxLines: 1,
           },
+        ],
+      },
+      // 进度条
+      {
+        type: 'text',
+        text: barStr,
+        font: { size: 11, weight: 'regular', family: 'Menlo' },
+        textColor: barColor,
+        maxLines: 1,
+      },
+      // 已用 / 总量
+      {
+        type: 'stack',
+        direction: 'row',
+        alignItems: 'center',
+        gap: 6,
+        children: [
           {
             type: 'text',
-            text: `${usedPercent.toFixed(1)}%`,
-            font: { size: 'headline', weight: 'bold' },
+            text: `已用`,
+            font: { size: 'subheadline' },
+            textColor: '#FFFFFF99',
+          },
+          {
+            type: 'text',
+            text: `${usedGB} GB`,
+            font: { size: 'subheadline', weight: 'semibold' },
+            textColor: barColor,
+          },
+          {
+            type: 'text',
+            text: `/ ${totalGB} GB`,
+            font: { size: 'subheadline' },
+            textColor: '#FFFFFF66',
+          },
+          { type: 'spacer' },
+          {
+            type: 'text',
+            text: `${pct}%`,
+            font: { size: 'title3', weight: 'bold' },
             textColor: barColor,
           },
         ],
       },
+      { type: 'spacer' },
+      // 重置时间行
       {
         type: 'stack',
         direction: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 6,
         children: [
           {
-            type: 'stack',
-            direction: 'row',
-            alignItems: 'center',
-            gap: 4,
-            flex: 1,
-            children: [
-              {
-                type: 'image',
-                src: 'sf-symbol:location.fill',
-                color: '#FFFFFF55',
-                width: 11,
-                height: 11,
-              },
-              {
-                type: 'text',
-                text: location,
-                font: { size: 'caption1' },
-                textColor: '#FFFFFF88',
-                maxLines: 1,
-                minScale: 0.8,
-              },
-            ],
+            type: 'image',
+            src: 'sf-symbol:arrow.clockwise.circle',
+            color: '#FFFFFF66',
+            width: 14,
+            height: 14,
           },
           {
-            type: 'stack',
-            direction: 'row',
-            alignItems: 'center',
-            gap: 4,
-            children: [
-              {
-                type: 'image',
-                src: 'sf-symbol:antenna.radiowaves.left.and.right',
-                color: '#FFFFFF55',
-                width: 11,
-                height: 11,
-              },
-              {
-                type: 'text',
-                text: ip,
-                font: { size: 'caption1', family: 'Menlo' },
-                textColor: '#FFFFFF88',
-                maxLines: 1,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        children: [
-          {
-            type: 'stack',
-            direction: 'column',
-            gap: 2,
-            flex: 1,
-            children: [
-              {
-                type: 'text',
-                text: '已使用',
-                font: { size: 'caption1' },
-                textColor: '#FFFFFF77',
-              },
-              {
-                type: 'text',
-                text: toGB(used),
-                font: { size: 'title3', weight: 'semibold' },
-                textColor: '#FFFFFF',
-              },
-            ],
+            type: 'text',
+            text: '重置日期：',
+            font: { size: 'footnote' },
+            textColor: '#FFFFFF66',
           },
           {
-            type: 'stack',
-            direction: 'column',
-            gap: 2,
-            flex: 1,
-            alignItems: 'end',
-            children: [
-              {
-                type: 'text',
-                text: '剩余可用',
-                font: { size: 'caption1' },
-                textColor: '#FFFFFF77',
-                textAlign: 'right',
-              },
-              {
-                type: 'text',
-                text: toGB(remaining),
-                font: { size: 'title3', weight: 'semibold' },
-                textColor: barColor,
-                textAlign: 'right',
-              },
-            ],
+            type: 'date',
+            date: resetDate,
+            format: 'date',
+            font: { size: 'footnote', weight: 'medium' },
+            textColor: '#FFFFFFCC',
           },
-        ],
-      },
-      {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        children: [
+          { type: 'spacer' },
           {
-            type: 'stack',
-            direction: 'row',
-            alignItems: 'center',
-            gap: 4,
-            flex: 1,
-            children: [
-              {
-                type: 'image',
-                src: 'sf-symbol:externaldrive',
-                color: '#FFFFFF55',
-                width: 12,
-                height: 12,
-              },
-              {
-                type: 'text',
-                text: `总量 ${toGB(total)}`,
-                font: { size: 'caption1' },
-                textColor: '#FFFFFF77',
-              },
-            ],
-          },
-          {
-            type: 'stack',
-            direction: 'row',
-            alignItems: 'center',
-            gap: 4,
-            children: [
-              {
-                type: 'image',
-                src: 'sf-symbol:arrow.clockwise.circle',
-                color: '#FFFFFF55',
-                width: 12,
-                height: 12,
-              },
-              {
-                type: 'text',
-                text: `下次重置 ${resetStr}`,
-                font: { size: 'caption1' },
-                textColor: '#FFFFFF99',
-              },
-            ],
+            type: 'date',
+            date: resetDate,
+            format: 'relative',
+            font: { size: 'footnote' },
+            textColor: '#FFFFFF66',
           },
         ],
       },
