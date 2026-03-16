@@ -38,6 +38,9 @@ export default async function (ctx) {
     + String(resetDate.getMonth() + 1).padStart(2, '0') + '-'
     + String(resetDate.getDate()).padStart(2, '0');
 
+  const location = data.node_location;
+  const ip = data.ip_addresses[0] || 'N/A';
+
   const barColor = usedPercent >= 90 ? '#FF3B30' : usedPercent >= 70 ? '#FF9500' : '#30D158';
 
   const usedFlex = Math.round(usedPercent);
@@ -98,10 +101,18 @@ export default async function (ctx) {
               text: 'BandwagonHost',
               font: { size: 'caption2', weight: 'semibold' },
               textColor: '#0A84FF',
+              flex: 1,
               maxLines: 1,
               minScale: 0.7,
             },
           ],
+        },
+        {
+          type: 'text',
+          text: ip,
+          font: { size: 'caption2' },
+          textColor: '#FFFFFF88',
+          maxLines: 1,
         },
         { type: 'spacer' },
         {
@@ -112,15 +123,9 @@ export default async function (ctx) {
         },
         {
           type: 'text',
-          text: `${toGB(used)} 已用`,
+          text: `${toGB(used)} / ${toGB(total)}`,
           font: { size: 'caption1' },
           textColor: '#FFFFFFAA',
-        },
-        {
-          type: 'text',
-          text: `剩余 ${toGB(remaining)}`,
-          font: { size: 'caption2' },
-          textColor: '#FFFFFF66',
         },
         {
           type: 'stack',
@@ -164,6 +169,7 @@ export default async function (ctx) {
     },
     refreshAfter: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     children: [
+      // 标题行
       {
         type: 'stack',
         direction: 'row',
@@ -179,7 +185,7 @@ export default async function (ctx) {
           },
           {
             type: 'text',
-            text: 'BandwagonHost 流量',
+            text: 'BandwagonHost',
             font: { size: 'headline', weight: 'bold' },
             textColor: '#FFFFFF',
             flex: 1,
@@ -193,6 +199,62 @@ export default async function (ctx) {
           },
         ],
       },
+      // 节点位置 & IP
+      {
+        type: 'stack',
+        direction: 'row',
+        alignItems: 'center',
+        gap: 12,
+        children: [
+          {
+            type: 'stack',
+            direction: 'row',
+            alignItems: 'center',
+            gap: 4,
+            flex: 1,
+            children: [
+              {
+                type: 'image',
+                src: 'sf-symbol:location.fill',
+                color: '#FFFFFF55',
+                width: 11,
+                height: 11,
+              },
+              {
+                type: 'text',
+                text: location,
+                font: { size: 'caption1' },
+                textColor: '#FFFFFF88',
+                maxLines: 1,
+                minScale: 0.8,
+              },
+            ],
+          },
+          {
+            type: 'stack',
+            direction: 'row',
+            alignItems: 'center',
+            gap: 4,
+            children: [
+              {
+                type: 'image',
+                src: 'sf-symbol:antenna.radiowaves.left.and.right',
+                color: '#FFFFFF55',
+                width: 11,
+                height: 11,
+              },
+              {
+                type: 'text',
+                text: ip,
+                font: { size: 'caption1', family: 'Menlo' },
+                textColor: '#FFFFFF88',
+                maxLines: 1,
+              },
+            ],
+          },
+        ],
+      },
+      // 进度条
       {
         type: 'stack',
         direction: 'row',
@@ -212,6 +274,7 @@ export default async function (ctx) {
             : { type: 'spacer', length: 0 },
         ],
       },
+      // 已用 / 剩余
       {
         type: 'stack',
         direction: 'row',
@@ -262,12 +325,14 @@ export default async function (ctx) {
           },
         ],
       },
+      // 分割线
       {
         type: 'stack',
         height: 1,
         backgroundColor: '#FFFFFF1A',
         children: [],
       },
+      // 月总量 & 重置日期
       {
         type: 'stack',
         direction: 'row',
