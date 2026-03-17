@@ -1,8 +1,5 @@
-// BWH流量小组件 for Egern
-// 环境变量（在 widgets env 中配置）
-// 登录https://bandwagonhost.com/clientarea.php,-->Services-->My Services-->点击齿轮-->Open KiWiVM-->左侧栏API
-// VEID: 你的 BandwagonHost VPS ID,比如：191977830
-// API_KEY: 你的 BandwagonHost API Key,比如：private_xxxxx
+// VEID: 你的 BandwagonHost VPS ID
+// API_KEY: 你的 BandwagonHost API Key
 
 export default async function (ctx) {
   const veid   = ctx.env.VEID;
@@ -18,12 +15,30 @@ export default async function (ctx) {
     return '#30D158';
   }
 
+  // 自适应颜色：light / dark
+  const C = {
+    bg1:        { light: '#EFF3F8', dark: '#0d1b2a' },
+    bg2:        { light: '#D9E4F0', dark: '#1b2a3b' },
+    bg3:        { light: '#C8D8EC', dark: '#162032' },
+    title:      { light: '#1A3A5C', dark: '#FFFFFF' },
+    accent:     { light: '#1A6EC4', dark: '#64D2FF' },
+    subtext:    { light: '#4A6080', dark: '#FFFFFF66' },
+    dimtext:    { light: '#7A96B0', dark: '#FFFFFF44' },
+    fainttext:  { light: '#9AAEC4', dark: '#FFFFFF55' },
+    bodytext:   { light: '#2A4A6A', dark: '#FFFFFFCC' },
+    resettext:  { light: '#5A7A9A', dark: '#FFFFFF88' },
+    locktext:   { light: '#1A3A5C', dark: '#FFFFFFAA' },
+  };
+
   function errorWidget(msg) {
     return {
       type: 'widget',
       backgroundGradient: {
         type: 'linear',
-        colors: ['#1a1a2e', '#16213e'],
+        colors: [
+          { light: '#EFF3F8', dark: '#1a1a2e' },
+          { light: '#D9E4F0', dark: '#16213e' },
+        ],
         startPoint: { x: 0, y: 0 },
         endPoint: { x: 1, y: 1 },
       },
@@ -84,7 +99,7 @@ export default async function (ctx) {
 
   const BG = {
     type: 'linear',
-    colors: ['#0d1b2a', '#1b2a3b', '#162032'],
+    colors: [C.bg1, C.bg2, C.bg3],
     stops: [0, 0.5, 1],
     startPoint: { x: 0, y: 0 },
     endPoint: { x: 1, y: 1 },
@@ -109,7 +124,7 @@ export default async function (ctx) {
           type: 'text',
           text: 'BWH',
           font: { size: 'caption2' },
-          textColor: '#FFFFFFAA',
+          textColor: C.locktext,
           textAlign: 'center',
           maxLines: 1,
         },
@@ -175,7 +190,7 @@ export default async function (ctx) {
           type: 'text',
           text: 'BandwagonHost',
           font: { size: 'caption1', weight: 'semibold' },
-          textColor: '#64D2FF',
+          textColor: C.accent,
           maxLines: 1,
           minScale: 0.7,
         },
@@ -197,7 +212,7 @@ export default async function (ctx) {
           type: 'text',
           text: usedStr + ' / ' + totalStr,
           font: { size: 'caption2', weight: 'medium' },
-          textColor: '#FFFFFFCC',
+          textColor: C.bodytext,
           maxLines: 1,
           minScale: 0.8,
         },
@@ -211,7 +226,7 @@ export default async function (ctx) {
             {
               type: 'image',
               src: 'sf-symbol:arrow.clockwise',
-              color: '#FFFFFF55',
+              color: C.fainttext,
               width: 10,
               height: 10,
             },
@@ -220,7 +235,7 @@ export default async function (ctx) {
               date: resetISO,
               format: 'relative',
               font: { size: 'caption2' },
-              textColor: '#FFFFFF88',
+              textColor: C.resettext,
               maxLines: 1,
             },
           ],
@@ -249,7 +264,7 @@ export default async function (ctx) {
           {
             type: 'image',
             src: 'sf-symbol:server.rack',
-            color: '#64D2FF',
+            color: C.accent,
             width: 18,
             height: 18,
           },
@@ -257,7 +272,7 @@ export default async function (ctx) {
             type: 'text',
             text: 'BandwagonHost',
             font: { size: 'headline', weight: 'bold' },
-            textColor: '#FFFFFF',
+            textColor: C.title,
             flex: 1,
             maxLines: 1,
           },
@@ -294,7 +309,7 @@ export default async function (ctx) {
             type: 'text',
             text: '已用',
             font: { size: 'subheadline' },
-            textColor: '#FFFFFF66',
+            textColor: C.subtext,
           },
           {
             type: 'text',
@@ -306,7 +321,7 @@ export default async function (ctx) {
             type: 'text',
             text: '/ ' + totalStr,
             font: { size: 'subheadline' },
-            textColor: '#FFFFFF44',
+            textColor: C.dimtext,
           },
           { type: 'spacer' },
           {
@@ -326,7 +341,7 @@ export default async function (ctx) {
           {
             type: 'image',
             src: 'sf-symbol:tray.fill',
-            color: '#FFFFFF44',
+            color: C.dimtext,
             width: 12,
             height: 12,
           },
@@ -334,7 +349,7 @@ export default async function (ctx) {
             type: 'text',
             text: '剩余 ' + remainStr,
             font: { size: 'footnote' },
-            textColor: '#FFFFFF88',
+            textColor: C.resettext,
           },
         ],
       },
@@ -348,7 +363,7 @@ export default async function (ctx) {
           {
             type: 'image',
             src: 'sf-symbol:arrow.clockwise.circle',
-            color: '#FFFFFF44',
+            color: C.dimtext,
             width: 13,
             height: 13,
           },
@@ -356,14 +371,14 @@ export default async function (ctx) {
             type: 'text',
             text: '重置日期：',
             font: { size: 'footnote' },
-            textColor: '#FFFFFF55',
+            textColor: C.fainttext,
           },
           {
             type: 'date',
             date: resetISO,
             format: 'date',
             font: { size: 'footnote', weight: 'medium' },
-            textColor: '#FFFFFFCC',
+            textColor: C.bodytext,
           },
           { type: 'spacer' },
           {
@@ -371,7 +386,7 @@ export default async function (ctx) {
             date: resetISO,
             format: 'relative',
             font: { size: 'footnote' },
-            textColor: '#FFFFFF55',
+            textColor: C.fainttext,
           },
         ],
       },
