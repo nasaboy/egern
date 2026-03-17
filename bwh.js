@@ -9,25 +9,27 @@ export default async function (ctx) {
     return (bytes / 1073741824).toFixed(2) + ' GB';
   }
 
+  function toGBFromKB(kb) {
+    return (kb / 1048576).toFixed(2) + ' GB';
+  }
+
   function barColor(ratio) {
     if (ratio >= 0.9) return '#FF453A';
     if (ratio >= 0.7) return '#FF9F0A';
     return '#30D158';
   }
 
-  // 自适应颜色：light / dark
   const C = {
-    bg1:        { light: '#D6E4F5', dark: '#0d1b2a' },
-    bg2:        { light: '#BDD4EC', dark: '#1b2a3b' },
-    bg3:        { light: '#A8C4E0', dark: '#162032' },
-    title:      { light: '#0A2540', dark: '#FFFFFF' },
-    accent:     { light: '#0A5AAF', dark: '#64D2FF' },
-    subtext:    { light: '#1A3A5C', dark: '#FFFFFF66' },
-    dimtext:    { light: '#2A5080', dark: '#FFFFFF44' },
-    fainttext:  { light: '#3A6090', dark: '#FFFFFF55' },
-    bodytext:   { light: '#0A2540', dark: '#FFFFFFCC' },
-    resettext:  { light: '#1A4060', dark: '#FFFFFF88' },
-    locktext:   { light: '#0A2540', dark: '#FFFFFFAA' },
+    bg1:       { light: '#D6E4F5', dark: '#0d1b2a' },
+    bg2:       { light: '#BDD4EC', dark: '#1b2a3b' },
+    bg3:       { light: '#A8C4E0', dark: '#162032' },
+    title:     { light: '#0A2540', dark: '#FFFFFF' },
+    accent:    { light: '#0A5AAF', dark: '#64D2FF' },
+    subtext:   { light: '#1A3A5C', dark: '#FFFFFF99' },
+    dimtext:   { light: '#2A5080', dark: '#FFFFFF55' },
+    fainttext: { light: '#3A6090', dark: '#FFFFFF44' },
+    bodytext:  { light: '#0A2540', dark: '#FFFFFFCC' },
+    resettext: { light: '#1A4060', dark: '#FFFFFF88' },
   };
 
   function errorWidget(msg) {
@@ -35,10 +37,7 @@ export default async function (ctx) {
       type: 'widget',
       backgroundGradient: {
         type: 'linear',
-        colors: [
-          { light: '#EFF3F8', dark: '#1a1a2e' },
-          { light: '#D9E4F0', dark: '#16213e' },
-        ],
+        colors: [C.bg1, C.bg2],
         startPoint: { x: 0, y: 0 },
         endPoint: { x: 1, y: 1 },
       },
@@ -78,21 +77,41 @@ export default async function (ctx) {
 
   if (info.error !== 0) return errorWidget('API 错误 #' + info.error);
 
-  const totalBytes = info.plan_monthly_data;
-  const usedBytes  = info.data_counter;
-  const resetISO   = new Date(info.data_next_reset * 1000).toISOString();
+  // ── 流量 ──────────────────────────────────────────────────
+  const totalBytes   = info.plan_monthly_data;
+  const usedBytes    = info.data_counter;
+  const trafficRatio = Math.min(usedBytes / totalBytes, 1);
+  const trafficPct   = (trafficRatio * 100).toFixed(1);
+  const usedStr      = toGB(usedBytes);
+  const totalStr     = toGB(totalBytes);
+  const remainStr    = toGB(Math.max(totalBytes - usedBytes, 0));
+  const trafficColor = barColor(trafficRatio);
 
-  const ratio     = Math.min(usedBytes / totalBytes, 1);
-  const pct       = (ratio * 100).toFixed(1);
-  const color     = barColor(ratio);
-  const usedStr   = toGB(usedBytes);
-  const totalStr  = toGB(totalBytes);
-  const remainStr = toGB(Math.max(totalBytes - usedBytes, 0));
+  // ── 内存 ──────────────────────────────────────────────────
+  const ramTotalKB   = info.plan_ram / 1024;
+  const ramAvailKB   = info.mem_available_kb;
+  const ramUsedKB    = ramTotalKB - ramAvailKB;
+  const ramRatio     = Math.min(ramUsedKB / ramTotalKB, 1);
+  const ramPct       = (ramRatio * 100).toFixed(1);
+  const ramUsedStr   = toGBFromKB(ramUsedKB);
+  const ramTotalStr  = toGBFromKB(ramTotalKB);
+  const ramColor     = barColor(ramRatio);
 
-  const statusText = info.ve_status === 'running' ? '运行中'
+  // ── 磁盘 ──────────────────────────────────────────────────
+  const diskTotal    = info.plan_disk;
+  const diskUsed     = info.ve_used_disk_space_b;
+  const diskRatio    = Math.min(diskUsed / diskTotal, 1);
+  const diskPct      = (diskRatio * 100).toFixed(1);
+  const diskUsedStr  = toGB(diskUsed);
+  const diskTotalStr = toGB(diskTotal);
+  const diskColor    = barColor(diskRatio);
+
+  // ── 状态 ──────────────────────────────────────────────────
+  const resetISO    = new Date(info.data_next_reset * 1000).toISOString();
+  const location    = info.node_location || '—';
+  const statusText  = info.ve_status === 'running' ? '运行中'
     : info.ve_status === 'starting' ? '启动中'
     : '已关机';
-
   const statusColor = info.ve_status === 'running' ? '#30D158'
     : info.ve_status === 'starting' ? '#FF9F0A'
     : '#FF453A';
@@ -105,6 +124,33 @@ export default async function (ctx) {
     endPoint: { x: 1, y: 1 },
   };
 
+  // ── 通用：单行指标行 ──────────────────────────────────────
+  function metricRow(icon, iconColor, label, usedS, totalS, pct, color, barLen) {
+    const f   = Math.round((pct / 100) * barLen);
+    const bar = '█'.repeat(f) + '░'.repeat(barLen - f);
+    return {
+      type: 'stack',
+      direction: 'column',
+      gap: 2,
+      children: [
+        {
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 5,
+          children: [
+            { type: 'image', src: 'sf-symbol:' + icon, color: iconColor, width: 11, height: 11 },
+            { type: 'text', text: label, font: { size: 'caption2' }, textColor: C.subtext, maxLines: 1 },
+            { type: 'spacer' },
+            { type: 'text', text: usedS + ' / ' + totalS, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
+            { type: 'text', text: pct + '%', font: { size: 'caption2', weight: 'bold' }, textColor: color, maxLines: 1 },
+          ],
+        },
+        { type: 'text', text: bar, font: { size: 8, family: 'Menlo' }, textColor: color, maxLines: 1 },
+      ],
+    };
+  }
+
   // ── 锁屏圆形 ─────────────────────────────────────────────
   if (ctx.widgetFamily === 'accessoryCircular') {
     return {
@@ -114,9 +160,9 @@ export default async function (ctx) {
       children: [
         {
           type: 'text',
-          text: pct + '%',
+          text: trafficPct + '%',
           font: { size: 'title2', weight: 'bold' },
-          textColor: color,
+          textColor: trafficColor,
           textAlign: 'center',
           maxLines: 1,
         },
@@ -124,7 +170,7 @@ export default async function (ctx) {
           type: 'text',
           text: 'BWH',
           font: { size: 'caption2' },
-          textColor: C.locktext,
+          textColor: C.resettext,
           textAlign: 'center',
           maxLines: 1,
         },
@@ -140,35 +186,24 @@ export default async function (ctx) {
       gap: 3,
       children: [
         {
-          type: 'text',
-          text: 'BWH 流量监控',
-          font: { size: 'headline', weight: 'bold' },
-          maxLines: 1,
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 5,
+          children: [
+            { type: 'image', src: 'sf-symbol:circle.fill', color: statusColor, width: 8, height: 8 },
+            { type: 'text', text: 'BWH · ' + statusText, font: { size: 'headline', weight: 'bold' }, maxLines: 1 },
+          ],
         },
-        {
-          type: 'text',
-          text: `已用 ${usedStr} / ${totalStr}  (${pct}%)`,
-          font: { size: 'body' },
-          maxLines: 1,
-          minScale: 0.8,
-        },
+        { type: 'text', text: '流量 ' + usedStr + ' / ' + totalStr + ' (' + trafficPct + '%)', font: { size: 'body' }, maxLines: 1, minScale: 0.8 },
         {
           type: 'stack',
           direction: 'row',
           alignItems: 'center',
           gap: 4,
           children: [
-            {
-              type: 'text',
-              text: '重置：',
-              font: { size: 'footnote' },
-            },
-            {
-              type: 'date',
-              date: resetISO,
-              format: 'relative',
-              font: { size: 'footnote', weight: 'medium' },
-            },
+            { type: 'text', text: '重置：', font: { size: 'footnote' } },
+            { type: 'date', date: resetISO, format: 'relative', font: { size: 'footnote', weight: 'medium' } },
           ],
         },
       ],
@@ -178,44 +213,35 @@ export default async function (ctx) {
   // ── 主屏 Small ────────────────────────────────────────────
   if (ctx.widgetFamily === 'systemSmall') {
     const BAR = 10;
-    const f   = Math.round(ratio * BAR);
-    const bar = '█'.repeat(f) + '░'.repeat(BAR - f);
+    const tf  = Math.round(trafficRatio * BAR);
+    const bar = '█'.repeat(tf) + '░'.repeat(BAR - tf);
     return {
       type: 'widget',
       backgroundGradient: BG,
       padding: 14,
-      gap: 6,
+      gap: 5,
       children: [
         {
-          type: 'text',
-          text: 'BandwagonHost',
-          font: { size: 'caption1', weight: 'semibold' },
-          textColor: C.accent,
-          maxLines: 1,
-          minScale: 0.7,
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 5,
+          children: [
+            { type: 'image', src: 'sf-symbol:server.rack', color: C.accent, width: 12, height: 12 },
+            { type: 'text', text: 'BandwagonHost', font: { size: 'caption1', weight: 'semibold' }, textColor: C.accent, flex: 1, maxLines: 1, minScale: 0.7 },
+            { type: 'image', src: 'sf-symbol:circle.fill', color: statusColor, width: 7, height: 7 },
+            { type: 'text', text: statusText, font: { size: 'caption2' }, textColor: statusColor, maxLines: 1 },
+          ],
         },
         {
           type: 'text',
-          text: pct + '%',
+          text: trafficPct + '%',
           font: { size: 'title', weight: 'bold' },
-          textColor: color,
+          textColor: trafficColor,
           maxLines: 1,
         },
-        {
-          type: 'text',
-          text: bar,
-          font: { size: 10, family: 'Menlo' },
-          textColor: color,
-          maxLines: 1,
-        },
-        {
-          type: 'text',
-          text: usedStr + ' / ' + totalStr,
-          font: { size: 'caption2', weight: 'medium' },
-          textColor: C.bodytext,
-          maxLines: 1,
-          minScale: 0.8,
-        },
+        { type: 'text', text: bar, font: { size: 10, family: 'Menlo' }, textColor: trafficColor, maxLines: 1 },
+        { type: 'text', text: usedStr + ' / ' + totalStr, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
         { type: 'spacer' },
         {
           type: 'stack',
@@ -223,20 +249,90 @@ export default async function (ctx) {
           alignItems: 'center',
           gap: 4,
           children: [
+            { type: 'image', src: 'sf-symbol:arrow.clockwise', color: C.fainttext, width: 10, height: 10 },
+            { type: 'date', date: resetISO, format: 'relative', font: { size: 'caption2' }, textColor: C.resettext, maxLines: 1 },
+          ],
+        },
+      ],
+    };
+  }
+
+  // ── 主屏 Medium ───────────────────────────────────────────
+  if (ctx.widgetFamily === 'systemMedium') {
+    return {
+      type: 'widget',
+      backgroundGradient: BG,
+      padding: 16,
+      gap: 10,
+      children: [
+        // 标题行
+        {
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 8,
+          children: [
+            { type: 'image', src: 'sf-symbol:server.rack', color: C.accent, width: 16, height: 16 },
+            { type: 'text', text: 'BandwagonHost', font: { size: 'headline', weight: 'bold' }, textColor: C.title, flex: 1, maxLines: 1 },
+            { type: 'image', src: 'sf-symbol:circle.fill', color: statusColor, width: 8, height: 8 },
+            { type: 'text', text: statusText, font: { size: 'caption1' }, textColor: statusColor, maxLines: 1 },
+          ],
+        },
+        // 节点 & 重置
+        {
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 6,
+          children: [
+            { type: 'image', src: 'sf-symbol:location.fill', color: C.fainttext, width: 10, height: 10 },
+            { type: 'text', text: location, font: { size: 'caption1' }, textColor: C.subtext, flex: 1, maxLines: 1 },
+            { type: 'image', src: 'sf-symbol:arrow.clockwise', color: C.fainttext, width: 10, height: 10 },
+            { type: 'date', date: resetISO, format: 'relative', font: { size: 'caption1' }, textColor: C.resettext, maxLines: 1 },
+          ],
+        },
+        // 三列指标
+        {
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'start',
+          gap: 10,
+          children: [
             {
-              type: 'image',
-              src: 'sf-symbol:arrow.clockwise',
-              color: C.fainttext,
-              width: 10,
-              height: 10,
+              type: 'stack',
+              direction: 'column',
+              gap: 3,
+              flex: 1,
+              children: [
+                { type: 'text', text: '流量', font: { size: 'caption2' }, textColor: C.subtext },
+                { type: 'text', text: trafficPct + '%', font: { size: 'title3', weight: 'bold' }, textColor: trafficColor, maxLines: 1 },
+                { type: 'text', text: usedStr, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
+                { type: 'text', text: '剩 ' + remainStr, font: { size: 'caption2' }, textColor: C.dimtext, maxLines: 1, minScale: 0.8 },
+              ],
             },
             {
-              type: 'date',
-              date: resetISO,
-              format: 'relative',
-              font: { size: 'caption2' },
-              textColor: C.resettext,
-              maxLines: 1,
+              type: 'stack',
+              direction: 'column',
+              gap: 3,
+              flex: 1,
+              children: [
+                { type: 'text', text: '内存', font: { size: 'caption2' }, textColor: C.subtext },
+                { type: 'text', text: ramPct + '%', font: { size: 'title3', weight: 'bold' }, textColor: ramColor, maxLines: 1 },
+                { type: 'text', text: ramUsedStr, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
+                { type: 'text', text: '共 ' + ramTotalStr, font: { size: 'caption2' }, textColor: C.dimtext, maxLines: 1, minScale: 0.8 },
+              ],
+            },
+            {
+              type: 'stack',
+              direction: 'column',
+              gap: 3,
+              flex: 1,
+              children: [
+                { type: 'text', text: '磁盘', font: { size: 'caption2' }, textColor: C.subtext },
+                { type: 'text', text: diskPct + '%', font: { size: 'title3', weight: 'bold' }, textColor: diskColor, maxLines: 1 },
+                { type: 'text', text: diskUsedStr, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
+                { type: 'text', text: '共 ' + diskTotalStr, font: { size: 'caption2' }, textColor: C.dimtext, maxLines: 1, minScale: 0.8 },
+              ],
             },
           ],
         },
@@ -244,150 +340,57 @@ export default async function (ctx) {
     };
   }
 
-  // ── 主屏 Medium / Large ───────────────────────────────────
-  const BAR_LEN = 22;
-  const filled  = Math.round(ratio * BAR_LEN);
-  const barStr  = '█'.repeat(filled) + '░'.repeat(BAR_LEN - filled);
-
+  // ── 主屏 Large ────────────────────────────────────────────
+  const BAR_LEN = 24;
   return {
     type: 'widget',
     backgroundGradient: BG,
     padding: 16,
-    gap: 8,
+    gap: 12,
     children: [
+      // 标题行
       {
         type: 'stack',
         direction: 'row',
         alignItems: 'center',
         gap: 8,
         children: [
-          {
-            type: 'image',
-            src: 'sf-symbol:server.rack',
-            color: C.accent,
-            width: 18,
-            height: 18,
-          },
-          {
-            type: 'text',
-            text: 'BandwagonHost',
-            font: { size: 'headline', weight: 'bold' },
-            textColor: C.title,
-            flex: 1,
-            maxLines: 1,
-          },
-          {
-            type: 'image',
-            src: 'sf-symbol:circle.fill',
-            color: statusColor,
-            width: 8,
-            height: 8,
-          },
-          {
-            type: 'text',
-            text: statusText,
-            font: { size: 'caption1' },
-            textColor: statusColor,
-            maxLines: 1,
-          },
+          { type: 'image', src: 'sf-symbol:server.rack', color: C.accent, width: 18, height: 18 },
+          { type: 'text', text: 'BandwagonHost', font: { size: 'headline', weight: 'bold' }, textColor: C.title, flex: 1, maxLines: 1 },
+          { type: 'image', src: 'sf-symbol:circle.fill', color: statusColor, width: 8, height: 8 },
+          { type: 'text', text: statusText, font: { size: 'caption1' }, textColor: statusColor, maxLines: 1 },
         ],
       },
-      {
-        type: 'text',
-        text: barStr,
-        font: { size: 11, family: 'Menlo' },
-        textColor: color,
-        maxLines: 1,
-      },
+      // 节点
       {
         type: 'stack',
         direction: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 5,
         children: [
-          {
-            type: 'text',
-            text: '已用',
-            font: { size: 'subheadline' },
-            textColor: C.subtext,
-          },
-          {
-            type: 'text',
-            text: usedStr,
-            font: { size: 'subheadline', weight: 'bold' },
-            textColor: color,
-          },
-          {
-            type: 'text',
-            text: '/ ' + totalStr,
-            font: { size: 'subheadline' },
-            textColor: C.dimtext,
-          },
-          { type: 'spacer' },
-          {
-            type: 'text',
-            text: pct + '%',
-            font: { size: 'title3', weight: 'bold' },
-            textColor: color,
-          },
+          { type: 'image', src: 'sf-symbol:location.fill', color: C.fainttext, width: 11, height: 11 },
+          { type: 'text', text: location, font: { size: 'footnote' }, textColor: C.subtext, maxLines: 1 },
         ],
       },
-      {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 4,
-        children: [
-          {
-            type: 'image',
-            src: 'sf-symbol:tray.fill',
-            color: C.dimtext,
-            width: 12,
-            height: 12,
-          },
-          {
-            type: 'text',
-            text: '剩余 ' + remainStr,
-            font: { size: 'footnote' },
-            textColor: C.resettext,
-          },
-        ],
-      },
+      // 流量
+      metricRow('arrow.up.arrow.down', C.accent, '流量', usedStr, totalStr, trafficPct, trafficColor, BAR_LEN),
+      // 内存
+      metricRow('memorychip', '#BF5AF2', '内存', ramUsedStr, ramTotalStr, ramPct, ramColor, BAR_LEN),
+      // 磁盘
+      metricRow('internaldrive', '#FF9F0A', '磁盘', diskUsedStr, diskTotalStr, diskPct, diskColor, BAR_LEN),
       { type: 'spacer' },
+      // 重置日期
       {
         type: 'stack',
         direction: 'row',
         alignItems: 'center',
         gap: 6,
         children: [
-          {
-            type: 'image',
-            src: 'sf-symbol:arrow.clockwise.circle',
-            color: C.dimtext,
-            width: 13,
-            height: 13,
-          },
-          {
-            type: 'text',
-            text: '重置日期：',
-            font: { size: 'footnote' },
-            textColor: C.fainttext,
-          },
-          {
-            type: 'date',
-            date: resetISO,
-            format: 'date',
-            font: { size: 'footnote', weight: 'medium' },
-            textColor: C.bodytext,
-          },
+          { type: 'image', src: 'sf-symbol:arrow.clockwise.circle', color: C.fainttext, width: 13, height: 13 },
+          { type: 'text', text: '重置日期：', font: { size: 'footnote' }, textColor: C.fainttext },
+          { type: 'date', date: resetISO, format: 'date', font: { size: 'footnote', weight: 'medium' }, textColor: C.bodytext },
           { type: 'spacer' },
-          {
-            type: 'date',
-            date: resetISO,
-            format: 'relative',
-            font: { size: 'footnote' },
-            textColor: C.fainttext,
-          },
+          { type: 'date', date: resetISO, format: 'relative', font: { size: 'footnote' }, textColor: C.resettext },
         ],
       },
     ],
