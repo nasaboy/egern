@@ -17,17 +17,17 @@ export default async function (ctx) {
 
   // 自适应颜色：light / dark
   const C = {
-    bg1:        { light: '#EFF3F8', dark: '#0d1b2a' },
-    bg2:        { light: '#D9E4F0', dark: '#1b2a3b' },
-    bg3:        { light: '#C8D8EC', dark: '#162032' },
-    title:      { light: '#1A3A5C', dark: '#FFFFFF' },
-    accent:     { light: '#1A6EC4', dark: '#64D2FF' },
-    subtext:    { light: '#4A6080', dark: '#FFFFFF66' },
-    dimtext:    { light: '#7A96B0', dark: '#FFFFFF44' },
-    fainttext:  { light: '#9AAEC4', dark: '#FFFFFF55' },
-    bodytext:   { light: '#2A4A6A', dark: '#FFFFFFCC' },
-    resettext:  { light: '#5A7A9A', dark: '#FFFFFF88' },
-    locktext:   { light: '#1A3A5C', dark: '#FFFFFFAA' },
+    bg1:        { light: '#D6E4F5', dark: '#0d1b2a' },
+    bg2:        { light: '#BDD4EC', dark: '#1b2a3b' },
+    bg3:        { light: '#A8C4E0', dark: '#162032' },
+    title:      { light: '#0A2540', dark: '#FFFFFF' },
+    accent:     { light: '#0A5AAF', dark: '#64D2FF' },
+    subtext:    { light: '#1A3A5C', dark: '#FFFFFF66' },
+    dimtext:    { light: '#2A5080', dark: '#FFFFFF44' },
+    fainttext:  { light: '#3A6090', dark: '#FFFFFF55' },
+    bodytext:   { light: '#0A2540', dark: '#FFFFFFCC' },
+    resettext:  { light: '#1A4060', dark: '#FFFFFF88' },
+    locktext:   { light: '#0A2540', dark: '#FFFFFFAA' },
   };
 
   function errorWidget(msg) {
