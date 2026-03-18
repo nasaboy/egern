@@ -1,26 +1,40 @@
+// Generated: 2026-03-18 03:57:00 UTC
 export default async function (ctx) {
   const veid = ctx.env.VEID;
   const apiKey = ctx.env.API_KEY;
+
+  // ── 自适应颜色（深色/浅色模式） ───────────────────────────
+  const C = {
+    bg:        { light: '#F2F2F7',  dark: '#1C1C1E' },
+    card:      { light: '#FFFFFF',  dark: '#2C2C3E' },
+    cardTrack: { light: '#E5E5EA',  dark: '#3A3A4C' },
+    title:     { light: '#000000',  dark: '#FFFFFF' },
+    body:      { light: '#1C1C1E',  dark: '#EEEEEE' },
+    secondary: { light: '#3C3C43',  dark: '#8E8E93' },
+    tertiary:  { light: '#6C6C70',  dark: '#636366' },
+    accent:    '#0A84FF',
+    purple:    '#BF5AF2',
+    green:     '#30D158',
+    warning:   '#FF9F0A',
+    danger:    '#FF453A',
+  };
 
   // ── 错误视图 ──────────────────────────────────────────────
   function errorWidget(msg) {
     return {
       type: 'widget',
-      backgroundColor: '#1C1C1E',
+      backgroundColor: C.bg,
       padding: 16,
       gap: 8,
       children: [
         {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'center',
-          gap: 6,
+          type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
           children: [
-            { type: 'image', src: 'sf-symbol:exclamationmark.triangle.fill', color: '#FF9F0A', width: 16, height: 16 },
-            { type: 'text', text: 'BandwagonHost', font: { size: 'caption1', weight: 'semibold' }, textColor: '#FF9F0A' },
+            { type: 'image', src: 'sf-symbol:exclamationmark.triangle.fill', color: C.warning, width: 16, height: 16 },
+            { type: 'text', text: 'BandwagonHost', font: { size: 'caption1', weight: 'semibold' }, textColor: C.warning },
           ],
         },
-        { type: 'text', text: msg, font: { size: 'caption2' }, textColor: '#FF453A' },
+        { type: 'text', text: msg, font: { size: 'caption2' }, textColor: C.danger },
       ],
     };
   }
@@ -54,6 +68,13 @@ export default async function (ctx) {
     return val.toFixed(i === 0 ? 0 : 2) + ' ' + units[i];
   }
 
+  // KB → MB / GB，最大单位 GB
+  function fmtMemKb(kb) {
+    if (kb == null) return 'N/A';
+    if (kb >= 1024 * 1024) return (kb / 1024 / 1024).toFixed(2) + ' GB';
+    if (kb >= 1024) return (kb / 1024).toFixed(0) + ' MB';
+    return kb + ' KB';
+  }
 
   const used     = info.data_counter || 0;
   const total    = info.plan_monthly_data || 0;
@@ -64,19 +85,10 @@ export default async function (ctx) {
 
   // plan_ram 单位 bytes，mem_available_kb 单位 KB
   // 已用 = 总量(bytes→KB) - 可用(KB)
-  const planRamKb    = info.plan_ram != null ? Math.round(info.plan_ram / 1024) : null;
-  const memAvailKb   = info.mem_available_kb;
-  const memUsedKb    = (planRamKb != null && memAvailKb != null) ? planRamKb - memAvailKb : null;
-
-  // KB → MB / GB，最大单位 GB
-  function fmtMemKb(kb) {
-    if (kb == null) return 'N/A';
-    if (kb >= 1024 * 1024) return (kb / 1024 / 1024).toFixed(2) + ' GB';
-    if (kb >= 1024) return (kb / 1024).toFixed(0) + ' MB';
-    return kb + ' KB';
-  }
-
-  const memStr = memUsedKb != null
+  const planRamKb  = info.plan_ram != null ? Math.round(info.plan_ram / 1024) : null;
+  const memAvailKb = info.mem_available_kb;
+  const memUsedKb  = (planRamKb != null && memAvailKb != null) ? planRamKb - memAvailKb : null;
+  const memStr     = memUsedKb != null
     ? `${fmtMemKb(memUsedKb)} / ${fmtMemKb(planRamKb)}`
     : 'N/A';
 
@@ -90,7 +102,7 @@ export default async function (ctx) {
   const dc = info.node_location || 'N/A';
 
   // 进度条颜色
-  const barColor = pct < 70 ? '#30D158' : pct < 90 ? '#FF9F0A' : '#FF453A';
+  const barColor = pct < 70 ? C.green : pct < 90 ? C.warning : C.danger;
   const pctColor = barColor;
 
   // ── 锁屏矩形（精简版） ────────────────────────────────────
@@ -103,12 +115,12 @@ export default async function (ctx) {
         {
           type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
           children: [
-            { type: 'image', src: 'sf-symbol:network', color: '#0A84FF', width: 12, height: 12 },
-            { type: 'text', text: 'BandwagonHost', font: { size: 'caption2', weight: 'bold' }, textColor: '#FFFFFF', maxLines: 1 },
+            { type: 'image', src: 'sf-symbol:network', color: C.accent, width: 12, height: 12 },
+            { type: 'text', text: 'BandwagonHost', font: { size: 'caption2', weight: 'bold' }, textColor: C.title, maxLines: 1 },
           ],
         },
-        { type: 'text', text: `流量 ${usedStr} / ${totalStr}  ${pct}%`, font: { size: 'caption2' }, textColor: '#EEEEEE', maxLines: 1 },
-        { type: 'text', text: `内存 ${memStr}  重置 ${resetStr}`, font: { size: 'caption2' }, textColor: '#AAAAAA', maxLines: 1 },
+        { type: 'text', text: `流量 ${usedStr} / ${totalStr}  ${pct}%`, font: { size: 'caption2' }, textColor: C.body, maxLines: 1 },
+        { type: 'text', text: `内存 ${memStr}  重置 ${resetStr}`, font: { size: 'caption2' }, textColor: C.secondary, maxLines: 1 },
       ],
     };
   }
@@ -127,12 +139,7 @@ export default async function (ctx) {
   if (ctx.widgetFamily === 'systemSmall') {
     return {
       type: 'widget',
-      backgroundGradient: {
-        type: 'linear',
-        colors: ['#1C1C2E', '#12122A'],
-        startPoint: { x: 0, y: 0 },
-        endPoint: { x: 1, y: 1 },
-      },
+      backgroundColor: C.bg,
       padding: 14,
       gap: 6,
       children: [
@@ -140,29 +147,22 @@ export default async function (ctx) {
         {
           type: 'stack', direction: 'row', alignItems: 'center', gap: 5,
           children: [
-            { type: 'image', src: 'sf-symbol:server.rack', color: '#0A84FF', width: 14, height: 14 },
-            { type: 'text', text: 'BWH', font: { size: 'caption1', weight: 'heavy' }, textColor: '#0A84FF' },
+            { type: 'image', src: 'sf-symbol:server.rack', color: C.accent, width: 14, height: 14 },
+            { type: 'text', text: 'BWH', font: { size: 'caption1', weight: 'heavy' }, textColor: C.accent },
           ],
         },
         { type: 'spacer' },
         // 百分比大字
-        {
-          type: 'text', text: pct + '%',
-          font: { size: 'title2', weight: 'bold' },
-          textColor: pctColor,
-        },
+        { type: 'text', text: pct + '%', font: { size: 'title2', weight: 'bold' }, textColor: pctColor },
         // 已用/总量
-        {
-          type: 'text', text: `${usedStr}\n/ ${totalStr}`,
-          font: { size: 'caption2' }, textColor: '#CCCCCC',
-        },
+        { type: 'text', text: `${usedStr}\n/ ${totalStr}`, font: { size: 'caption2' }, textColor: C.secondary },
         { type: 'spacer' },
         // DC
         {
           type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
           children: [
-            { type: 'image', src: 'sf-symbol:location.fill', color: '#636366', width: 10, height: 10 },
-            { type: 'text', text: dc, font: { size: 'caption2' }, textColor: '#636366', maxLines: 1, minScale: 0.6 },
+            { type: 'image', src: 'sf-symbol:location.fill', color: C.tertiary, width: 10, height: 10 },
+            { type: 'text', text: dc, font: { size: 'caption2' }, textColor: C.tertiary, maxLines: 1, minScale: 0.6 },
           ],
         },
       ],
@@ -170,17 +170,11 @@ export default async function (ctx) {
   }
 
   // ── 主屏幕中/大尺寸（默认） ───────────────────────────────
-  // 进度条（用 stack 模拟）
-  const BAR_FILL = Math.max(1, Math.round(ratio * 100)); // 1~100 → flex 比例
+  const BAR_FILL = Math.max(1, Math.round(ratio * 100));
 
   return {
     type: 'widget',
-    backgroundGradient: {
-      type: 'linear',
-      colors: ['#1C1C2E', '#12122A'],
-      startPoint: { x: 0, y: 0 },
-      endPoint: { x: 1, y: 1 },
-    },
+    backgroundColor: C.bg,
     padding: 16,
     gap: 10,
     children: [
@@ -189,20 +183,17 @@ export default async function (ctx) {
       {
         type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
         children: [
-          { type: 'image', src: 'sf-symbol:server.rack', color: '#0A84FF', width: 18, height: 18 },
-          { type: 'text', text: 'BandwagonHost', font: { size: 'headline', weight: 'bold' }, textColor: '#FFFFFF', flex: 1 },
+          { type: 'image', src: 'sf-symbol:server.rack', color: C.accent, width: 18, height: 18 },
+          { type: 'text', text: 'BandwagonHost', font: { size: 'headline', weight: 'bold' }, textColor: C.title, flex: 1 },
           // DC 标签
           {
-            type: 'stack',
-            direction: 'row',
-            alignItems: 'center',
-            gap: 3,
-            backgroundColor: '#2C2C3E',
+            type: 'stack', direction: 'row', alignItems: 'center', gap: 3,
+            backgroundColor: C.card,
             borderRadius: 6,
             padding: [2, 6, 2, 6],
             children: [
-              { type: 'image', src: 'sf-symbol:location.fill', color: '#636366', width: 10, height: 10 },
-              { type: 'text', text: dc, font: { size: 'caption2' }, textColor: '#8E8E93', maxLines: 1, minScale: 0.7 },
+              { type: 'image', src: 'sf-symbol:location.fill', color: C.tertiary, width: 10, height: 10 },
+              { type: 'text', text: dc, font: { size: 'caption2' }, textColor: C.secondary, maxLines: 1, minScale: 0.7 },
             ],
           },
         ],
@@ -210,8 +201,8 @@ export default async function (ctx) {
 
       // ── 流量区 ──
       {
-        type: 'stack', direction: 'column', gap: 6,
-        backgroundColor: '#2C2C3E',
+        type: 'stack', direction: 'column', gap: 10,
+        backgroundColor: C.card,
         borderRadius: 10,
         padding: [10, 12, 10, 12],
         children: [
@@ -219,38 +210,33 @@ export default async function (ctx) {
           {
             type: 'stack', direction: 'row', alignItems: 'center',
             children: [
-              { type: 'image', src: 'sf-symbol:arrow.up.arrow.down', color: '#0A84FF', width: 13, height: 13 },
+              { type: 'image', src: 'sf-symbol:arrow.up.arrow.down', color: C.accent, width: 13, height: 13 },
               { type: 'spacer', length: 5 },
-              { type: 'text', text: '流量使用', font: { size: 'subheadline', weight: 'semibold' }, textColor: '#EEEEEE', flex: 1 },
+              { type: 'text', text: '流量使用', font: { size: 'subheadline', weight: 'semibold' }, textColor: C.body, flex: 1 },
               { type: 'text', text: pct + '%', font: { size: 'subheadline', weight: 'bold' }, textColor: pctColor },
             ],
           },
           // 进度条
           {
             type: 'stack', direction: 'row', height: 6, borderRadius: 3,
-            backgroundColor: '#3A3A4C',
+            backgroundColor: C.cardTrack,
             children: [
-              {
-                type: 'stack', flex: BAR_FILL, height: 6,
-                backgroundColor: barColor, borderRadius: 3,
-                children: [],
-              },
+              { type: 'stack', flex: BAR_FILL, height: 6, backgroundColor: barColor, borderRadius: 3, children: [] },
               { type: 'spacer', length: 0, flex: Math.max(0, 100 - BAR_FILL) },
             ],
           },
-          // 已用 / 总量
+          // 已用 / 总量 + 重置日期
           {
             type: 'stack', direction: 'row', alignItems: 'center',
             children: [
-              { type: 'text', text: usedStr, font: { size: 'footnote', weight: 'medium' }, textColor: '#FFFFFF' },
-              { type: 'text', text: ' / ' + totalStr, font: { size: 'footnote' }, textColor: '#8E8E93' },
+              { type: 'text', text: usedStr, font: { size: 'footnote', weight: 'medium' }, textColor: C.title },
+              { type: 'text', text: ' / ' + totalStr, font: { size: 'footnote' }, textColor: C.secondary },
               { type: 'spacer' },
-              // 重置日期
               {
                 type: 'stack', direction: 'row', alignItems: 'center', gap: 3,
                 children: [
-                  { type: 'image', src: 'sf-symbol:arrow.clockwise', color: '#636366', width: 10, height: 10 },
-                  { type: 'text', text: '重置 ' + resetStr, font: { size: 'caption2' }, textColor: '#636366' },
+                  { type: 'image', src: 'sf-symbol:arrow.clockwise', color: C.tertiary, width: 10, height: 10 },
+                  { type: 'text', text: '重置 ' + resetStr, font: { size: 'caption2' }, textColor: C.tertiary },
                 ],
               },
             ],
@@ -261,14 +247,14 @@ export default async function (ctx) {
       // ── 内存区 ──
       {
         type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
-        backgroundColor: '#2C2C3E',
+        backgroundColor: C.card,
         borderRadius: 10,
         padding: [8, 12, 8, 12],
         children: [
-          { type: 'image', src: 'sf-symbol:memorychip', color: '#BF5AF2', width: 14, height: 14 },
-          { type: 'text', text: '内存', font: { size: 'footnote', weight: 'semibold' }, textColor: '#EEEEEE' },
+          { type: 'image', src: 'sf-symbol:memorychip', color: C.purple, width: 14, height: 14 },
+          { type: 'text', text: '内存', font: { size: 'footnote', weight: 'semibold' }, textColor: C.body },
           { type: 'spacer' },
-          { type: 'text', text: memStr, font: { size: 'footnote', weight: 'medium' }, textColor: '#BF5AF2' },
+          { type: 'text', text: memStr, font: { size: 'footnote', weight: 'medium' }, textColor: C.purple },
         ],
       },
 
