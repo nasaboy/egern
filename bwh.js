@@ -47,19 +47,13 @@ export default async function (ctx) {
   // ── 数据处理 ──────────────────────────────────────────────
   function fmtBytes(bytes) {
     if (bytes == null) return 'N/A';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const units = ['B', 'KB', 'MB', 'GB'];
     let val = bytes;
     let i = 0;
     while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
     return val.toFixed(i === 0 ? 0 : 2) + ' ' + units[i];
   }
 
-  function fmtMem(kb) {
-    if (kb == null) return 'N/A';
-    if (kb >= 1024 * 1024) return (kb / 1024 / 1024).toFixed(2) + ' GB';
-    if (kb >= 1024) return (kb / 1024).toFixed(1) + ' MB';
-    return kb + ' KB';
-  }
 
   const used     = info.data_counter || 0;
   const total    = info.plan_monthly_data || 0;
@@ -68,20 +62,32 @@ export default async function (ctx) {
   const usedStr  = fmtBytes(used);
   const totalStr = fmtBytes(total);
 
-  const memUsed  = info.ram_used_kb;
-  const memTotal = info.plan_ram;
-  const memStr   = memUsed != null
-    ? `${fmtMem(memUsed)} / ${fmtMem(memTotal)}`
+  // plan_ram 单位 bytes，mem_available_kb 单位 KB
+  // 已用 = 总量(bytes→KB) - 可用(KB)
+  const planRamKb    = info.plan_ram != null ? Math.round(info.plan_ram / 1024) : null;
+  const memAvailKb   = info.mem_available_kb;
+  const memUsedKb    = (planRamKb != null && memAvailKb != null) ? planRamKb - memAvailKb : null;
+
+  // KB → MB / GB，最大单位 GB
+  function fmtMemKb(kb) {
+    if (kb == null) return 'N/A';
+    if (kb >= 1024 * 1024) return (kb / 1024 / 1024).toFixed(2) + ' GB';
+    if (kb >= 1024) return (kb / 1024).toFixed(0) + ' MB';
+    return kb + ' KB';
+  }
+
+  const memStr = memUsedKb != null
+    ? `${fmtMemKb(memUsedKb)} / ${fmtMemKb(planRamKb)}`
     : 'N/A';
 
-  // 重置日期：next_invoice_date 是 Unix 时间戳（秒）
+  // 重置日期：data_next_reset 是 Unix 时间戳（秒）
   let resetStr = 'N/A';
-  if (info.next_invoice_date) {
-    const d = new Date(info.next_invoice_date * 1000);
+  if (info.data_next_reset) {
+    const d = new Date(info.data_next_reset * 1000);
     resetStr = `${d.getMonth() + 1}月${d.getDate()}日`;
   }
 
-  const dc = info.node_datacenter || info.node_location || 'N/A';
+  const dc = info.node_location || 'N/A';
 
   // 进度条颜色
   const barColor = pct < 70 ? '#30D158' : pct < 90 ? '#FF9F0A' : '#FF453A';
