@@ -1,374 +1,271 @@
-// VEID: 你的 BandwagonHost VPS ID
-// API_KEY: 你的 BandwagonHost API Key
-
 export default async function (ctx) {
-  const veid   = ctx.env.VEID;
+  const veid = ctx.env.VEID;
   const apiKey = ctx.env.API_KEY;
 
-  function toGB(bytes) {
-    return (bytes / 1073741824).toFixed(2) + ' GB';
-  }
-
-  function toGBFromKB(kb) {
-    return (kb / 1048576).toFixed(2) + ' GB';
-  }
-
-  function barColor(ratio) {
-    if (ratio >= 0.9) return '#FF453A';
-    if (ratio >= 0.7) return '#FF9F0A';
-    return '#30D158';
-  }
-
-  const C = {
-    bg1:       { light: '#D6E4F5', dark: '#0d1b2a' },
-    bg2:       { light: '#BDD4EC', dark: '#1b2a3b' },
-    bg3:       { light: '#A8C4E0', dark: '#162032' },
-    title:     { light: '#0A2540', dark: '#FFFFFF' },
-    accent:    { light: '#0A5AAF', dark: '#64D2FF' },
-    subtext:   { light: '#1A3A5C', dark: '#FFFFFF99' },
-    dimtext:   { light: '#2A5080', dark: '#FFFFFF55' },
-    fainttext: { light: '#3A6090', dark: '#FFFFFF44' },
-    bodytext:  { light: '#0A2540', dark: '#FFFFFFCC' },
-    resettext: { light: '#1A4060', dark: '#FFFFFF88' },
-  };
-
+  // ── 错误视图 ──────────────────────────────────────────────
   function errorWidget(msg) {
     return {
       type: 'widget',
-      backgroundGradient: {
-        type: 'linear',
-        colors: [C.bg1, C.bg2],
-        startPoint: { x: 0, y: 0 },
-        endPoint: { x: 1, y: 1 },
-      },
+      backgroundColor: '#1C1C1E',
       padding: 16,
       gap: 8,
       children: [
         {
-          type: 'image',
-          src: 'sf-symbol:exclamationmark.triangle.fill',
-          color: '#FF9F0A',
-          width: 22,
-          height: 22,
+          type: 'stack',
+          direction: 'row',
+          alignItems: 'center',
+          gap: 6,
+          children: [
+            { type: 'image', src: 'sf-symbol:exclamationmark.triangle.fill', color: '#FF9F0A', width: 16, height: 16 },
+            { type: 'text', text: 'BandwagonHost', font: { size: 'caption1', weight: 'semibold' }, textColor: '#FF9F0A' },
+          ],
         },
-        {
-          type: 'text',
-          text: msg,
-          font: { size: 'footnote' },
-          textColor: '#FF453A',
-          maxLines: 3,
-        },
+        { type: 'text', text: msg, font: { size: 'caption2' }, textColor: '#FF453A' },
       ],
     };
   }
 
-  if (!veid || !apiKey) return errorWidget('请在 env 中设置 VEID 和 API_KEY');
+  // ── 参数校验 ──────────────────────────────────────────────
+  if (!veid || !apiKey) {
+    return errorWidget('请在 env 中配置 VEID 和 API_KEY');
+  }
 
+  // ── 拉取数据 ──────────────────────────────────────────────
   let info;
   try {
-    const resp = await ctx.http.get(
-      `https://api.64clouds.com/v1/getLiveServiceInfo?veid=${veid}&api_key=${apiKey}`,
-      { timeout: 10000 }
-    );
+    const url = `https://api.64clouds.com/v1/getLiveServiceInfo?veid=${veid}&api_key=${apiKey}`;
+    const resp = await ctx.http.get(url, { timeout: 15000 });
     info = await resp.json();
   } catch (e) {
     return errorWidget('请求失败: ' + e.message);
   }
 
-  if (info.error !== 0) return errorWidget('API 错误 #' + info.error);
-
-  // ── 流量 ──────────────────────────────────────────────────
-  const totalBytes   = info.plan_monthly_data;
-  const usedBytes    = info.data_counter;
-  const trafficRatio = Math.min(usedBytes / totalBytes, 1);
-  const trafficPct   = (trafficRatio * 100).toFixed(1);
-  const usedStr      = toGB(usedBytes);
-  const totalStr     = toGB(totalBytes);
-  const remainStr    = toGB(Math.max(totalBytes - usedBytes, 0));
-  const trafficColor = barColor(trafficRatio);
-
-  // ── 内存 ──────────────────────────────────────────────────
-  const ramTotalKB  = info.plan_ram / 1024;
-  const ramAvailKB  = info.mem_available_kb;
-  const ramUsedKB   = ramTotalKB - ramAvailKB;
-  const ramRatio    = Math.min(ramUsedKB / ramTotalKB, 1);
-  const ramPct      = (ramRatio * 100).toFixed(1);
-  const ramUsedStr  = toGBFromKB(ramUsedKB);
-  const ramTotalStr = toGBFromKB(ramTotalKB);
-  const ramColor    = barColor(ramRatio);
-
-  // ── 磁盘 ──────────────────────────────────────────────────
-  const diskTotal    = info.plan_disk;
-  const diskUsed     = info.ve_used_disk_space_b;
-  const diskRatio    = Math.min(diskUsed / diskTotal, 1);
-  const diskPct      = (diskRatio * 100).toFixed(1);
-  const diskUsedStr  = toGB(diskUsed);
-  const diskTotalStr = toGB(diskTotal);
-  const diskColor    = barColor(diskRatio);
-
-  // ── 状态 ──────────────────────────────────────────────────
-  const resetISO    = new Date(info.data_next_reset * 1000).toISOString();
-  const location    = info.node_location || '—';
-  const statusText  = info.ve_status === 'running' ? '运行中'
-    : info.ve_status === 'starting' ? '启动中'
-    : '已关机';
-  const statusColor = info.ve_status === 'running' ? '#30D158'
-    : info.ve_status === 'starting' ? '#FF9F0A'
-    : '#FF453A';
-
-  const BG = {
-    type: 'linear',
-    colors: [C.bg1, C.bg2, C.bg3],
-    stops: [0, 0.5, 1],
-    startPoint: { x: 0, y: 0 },
-    endPoint: { x: 1, y: 1 },
-  };
-
-  // ── 通用：单行指标行（Large 用）──────────────────────────
-  function metricRow(icon, iconColor, label, usedS, totalS, pct, color, barLen) {
-    const f   = Math.round((pct / 100) * barLen);
-    const bar = '█'.repeat(f) + '░'.repeat(barLen - f);
-    return {
-      type: 'stack',
-      direction: 'column',
-      gap: 1,
-      children: [
-        {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'center',
-          gap: 4,
-          children: [
-            { type: 'image', src: 'sf-symbol:' + icon, color: iconColor, width: 10, height: 10 },
-            { type: 'text', text: label, font: { size: 'caption2' }, textColor: C.subtext, maxLines: 1 },
-            { type: 'spacer' },
-            { type: 'text', text: usedS + ' / ' + totalS, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
-            { type: 'text', text: pct + '%', font: { size: 'caption2', weight: 'bold' }, textColor: color, maxLines: 1 },
-          ],
-        },
-        { type: 'text', text: bar, font: { size: 7, family: 'Menlo' }, textColor: color, maxLines: 1 },
-      ],
-    };
+  if (!info || info.error !== 0) {
+    return errorWidget('API 错误: ' + (info ? info.message : '无响应'));
   }
 
-  // ── 锁屏圆形 ─────────────────────────────────────────────
-  if (ctx.widgetFamily === 'accessoryCircular') {
-    return {
-      type: 'widget',
-      padding: 2,
-      gap: 1,
-      children: [
-        {
-          type: 'text',
-          text: trafficPct + '%',
-          font: { size: 'title2', weight: 'bold' },
-          textColor: trafficColor,
-          textAlign: 'center',
-          maxLines: 1,
-        },
-        {
-          type: 'text',
-          text: 'BWH',
-          font: { size: 'caption2' },
-          textColor: C.resettext,
-          textAlign: 'center',
-          maxLines: 1,
-        },
-      ],
-    };
+  // ── 数据处理 ──────────────────────────────────────────────
+  function fmtBytes(bytes) {
+    if (bytes == null) return 'N/A';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let val = bytes;
+    let i = 0;
+    while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+    return val.toFixed(i === 0 ? 0 : 2) + ' ' + units[i];
   }
 
-  // ── 锁屏矩形 ─────────────────────────────────────────────
+  function fmtMem(kb) {
+    if (kb == null) return 'N/A';
+    if (kb >= 1024 * 1024) return (kb / 1024 / 1024).toFixed(2) + ' GB';
+    if (kb >= 1024) return (kb / 1024).toFixed(1) + ' MB';
+    return kb + ' KB';
+  }
+
+  const used     = info.data_counter || 0;
+  const total    = info.plan_monthly_data || 0;
+  const ratio    = total > 0 ? used / total : 0;
+  const pct      = Math.round(ratio * 100);
+  const usedStr  = fmtBytes(used);
+  const totalStr = fmtBytes(total);
+
+  const memUsed  = info.ram_used_kb;
+  const memTotal = info.plan_ram;
+  const memStr   = memUsed != null
+    ? `${fmtMem(memUsed)} / ${fmtMem(memTotal)}`
+    : 'N/A';
+
+  // 重置日期：next_invoice_date 是 Unix 时间戳（秒）
+  let resetStr = 'N/A';
+  if (info.next_invoice_date) {
+    const d = new Date(info.next_invoice_date * 1000);
+    resetStr = `${d.getMonth() + 1}月${d.getDate()}日`;
+  }
+
+  const dc = info.node_datacenter || info.node_location || 'N/A';
+
+  // 进度条颜色
+  const barColor = pct < 70 ? '#30D158' : pct < 90 ? '#FF9F0A' : '#FF453A';
+  const pctColor = barColor;
+
+  // ── 锁屏矩形（精简版） ────────────────────────────────────
   if (ctx.widgetFamily === 'accessoryRectangular') {
     return {
       type: 'widget',
       padding: [2, 4, 2, 4],
-      gap: 3,
+      gap: 2,
       children: [
         {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'center',
-          gap: 5,
+          type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
           children: [
-            { type: 'image', src: 'sf-symbol:circle.fill', color: statusColor, width: 8, height: 8 },
-            { type: 'text', text: 'BWH · ' + statusText, font: { size: 'headline', weight: 'bold' }, maxLines: 1 },
+            { type: 'image', src: 'sf-symbol:network', color: '#0A84FF', width: 12, height: 12 },
+            { type: 'text', text: 'BandwagonHost', font: { size: 'caption2', weight: 'bold' }, textColor: '#FFFFFF', maxLines: 1 },
           ],
         },
-        { type: 'text', text: '流量 ' + usedStr + ' / ' + totalStr + ' (' + trafficPct + '%)', font: { size: 'body' }, maxLines: 1, minScale: 0.8 },
-        {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'center',
-          gap: 4,
-          children: [
-            { type: 'text', text: '重置：', font: { size: 'footnote' } },
-            { type: 'date', date: resetISO, format: 'relative', font: { size: 'footnote', weight: 'medium' } },
-          ],
-        },
+        { type: 'text', text: `流量 ${usedStr} / ${totalStr}  ${pct}%`, font: { size: 'caption2' }, textColor: '#EEEEEE', maxLines: 1 },
+        { type: 'text', text: `内存 ${memStr}  重置 ${resetStr}`, font: { size: 'caption2' }, textColor: '#AAAAAA', maxLines: 1 },
       ],
     };
   }
 
-  // ── 主屏 Small ────────────────────────────────────────────
+  // ── 锁屏内联 ─────────────────────────────────────────────
+  if (ctx.widgetFamily === 'accessoryInline') {
+    return {
+      type: 'widget',
+      children: [
+        { type: 'text', text: `BWH 流量 ${pct}% · ${usedStr}/${totalStr}`, font: { size: 'caption1' }, maxLines: 1 },
+      ],
+    };
+  }
+
+  // ── 主屏幕小尺寸 ──────────────────────────────────────────
   if (ctx.widgetFamily === 'systemSmall') {
-    const BAR = 10;
-    const tf  = Math.round(trafficRatio * BAR);
-    const bar = '█'.repeat(tf) + '░'.repeat(BAR - tf);
     return {
       type: 'widget',
-      backgroundGradient: BG,
-      padding: 12,
-      gap: 4,
-      children: [
-        {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'center',
-          gap: 4,
-          children: [
-            { type: 'image', src: 'sf-symbol:server.rack', color: C.accent, width: 11, height: 11 },
-            { type: 'text', text: 'BandwagonHost', font: { size: 'caption1', weight: 'semibold' }, textColor: C.accent, flex: 1, maxLines: 1, minScale: 0.7 },
-            { type: 'image', src: 'sf-symbol:circle.fill', color: statusColor, width: 7, height: 7 },
-            { type: 'text', text: statusText, font: { size: 'caption2' }, textColor: statusColor, maxLines: 1 },
-          ],
-        },
-        { type: 'text', text: trafficPct + '%', font: { size: 'title', weight: 'bold' }, textColor: trafficColor, maxLines: 1 },
-        { type: 'text', text: bar, font: { size: 10, family: 'Menlo' }, textColor: trafficColor, maxLines: 1 },
-        { type: 'text', text: usedStr + ' / ' + totalStr, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
-        { type: 'spacer' },
-        {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'center',
-          gap: 4,
-          children: [
-            { type: 'image', src: 'sf-symbol:arrow.clockwise', color: C.fainttext, width: 9, height: 9 },
-            { type: 'date', date: resetISO, format: 'relative', font: { size: 'caption2' }, textColor: C.resettext, maxLines: 1 },
-          ],
-        },
-      ],
-    };
-  }
-
-  // ── 主屏 Medium ───────────────────────────────────────────
-  if (ctx.widgetFamily === 'systemMedium') {
-    return {
-      type: 'widget',
-      backgroundGradient: BG,
+      backgroundGradient: {
+        type: 'linear',
+        colors: ['#1C1C2E', '#12122A'],
+        startPoint: { x: 0, y: 0 },
+        endPoint: { x: 1, y: 1 },
+      },
       padding: 14,
-      gap: 8,
+      gap: 6,
       children: [
+        // 标题行
         {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'center',
-          gap: 7,
+          type: 'stack', direction: 'row', alignItems: 'center', gap: 5,
           children: [
-            { type: 'image', src: 'sf-symbol:server.rack', color: C.accent, width: 15, height: 15 },
-            { type: 'text', text: 'BandwagonHost', font: { size: 'headline', weight: 'bold' }, textColor: C.title, flex: 1, maxLines: 1 },
-            { type: 'image', src: 'sf-symbol:circle.fill', color: statusColor, width: 7, height: 7 },
-            { type: 'text', text: statusText, font: { size: 'caption1' }, textColor: statusColor, maxLines: 1 },
+            { type: 'image', src: 'sf-symbol:server.rack', color: '#0A84FF', width: 14, height: 14 },
+            { type: 'text', text: 'BWH', font: { size: 'caption1', weight: 'heavy' }, textColor: '#0A84FF' },
           ],
         },
+        { type: 'spacer' },
+        // 百分比大字
         {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'center',
-          gap: 5,
-          children: [
-            { type: 'image', src: 'sf-symbol:location.fill', color: C.fainttext, width: 9, height: 9 },
-            { type: 'text', text: location, font: { size: 'caption1' }, textColor: C.subtext, flex: 1, maxLines: 1 },
-            { type: 'image', src: 'sf-symbol:arrow.clockwise', color: C.fainttext, width: 9, height: 9 },
-            { type: 'date', date: resetISO, format: 'relative', font: { size: 'caption1' }, textColor: C.resettext, maxLines: 1 },
-          ],
+          type: 'text', text: pct + '%',
+          font: { size: 'title2', weight: 'bold' },
+          textColor: pctColor,
         },
+        // 已用/总量
         {
-          type: 'stack',
-          direction: 'row',
-          alignItems: 'start',
-          gap: 8,
+          type: 'text', text: `${usedStr}\n/ ${totalStr}`,
+          font: { size: 'caption2' }, textColor: '#CCCCCC',
+        },
+        { type: 'spacer' },
+        // DC
+        {
+          type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
           children: [
-            {
-              type: 'stack', direction: 'column', gap: 2, flex: 1,
-              children: [
-                { type: 'text', text: '流量', font: { size: 'caption2' }, textColor: C.subtext },
-                { type: 'text', text: trafficPct + '%', font: { size: 'title3', weight: 'bold' }, textColor: trafficColor, maxLines: 1 },
-                { type: 'text', text: usedStr, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
-                { type: 'text', text: '剩 ' + remainStr, font: { size: 'caption2' }, textColor: C.dimtext, maxLines: 1, minScale: 0.8 },
-              ],
-            },
-            {
-              type: 'stack', direction: 'column', gap: 2, flex: 1,
-              children: [
-                { type: 'text', text: '内存', font: { size: 'caption2' }, textColor: C.subtext },
-                { type: 'text', text: ramPct + '%', font: { size: 'title3', weight: 'bold' }, textColor: ramColor, maxLines: 1 },
-                { type: 'text', text: ramUsedStr, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
-                { type: 'text', text: '共 ' + ramTotalStr, font: { size: 'caption2' }, textColor: C.dimtext, maxLines: 1, minScale: 0.8 },
-              ],
-            },
-            {
-              type: 'stack', direction: 'column', gap: 2, flex: 1,
-              children: [
-                { type: 'text', text: '磁盘', font: { size: 'caption2' }, textColor: C.subtext },
-                { type: 'text', text: diskPct + '%', font: { size: 'title3', weight: 'bold' }, textColor: diskColor, maxLines: 1 },
-                { type: 'text', text: diskUsedStr, font: { size: 'caption2', weight: 'medium' }, textColor: C.bodytext, maxLines: 1, minScale: 0.8 },
-                { type: 'text', text: '共 ' + diskTotalStr, font: { size: 'caption2' }, textColor: C.dimtext, maxLines: 1, minScale: 0.8 },
-              ],
-            },
+            { type: 'image', src: 'sf-symbol:location.fill', color: '#636366', width: 10, height: 10 },
+            { type: 'text', text: dc, font: { size: 'caption2' }, textColor: '#636366', maxLines: 1, minScale: 0.6 },
           ],
         },
       ],
     };
   }
 
-  // ── 主屏 Large ────────────────────────────────────────────
-  const BAR_LEN = 26;
+  // ── 主屏幕中/大尺寸（默认） ───────────────────────────────
+  // 进度条（用 stack 模拟）
+  const BAR_FILL = Math.max(1, Math.round(ratio * 100)); // 1~100 → flex 比例
+
   return {
     type: 'widget',
-    backgroundGradient: BG,
-    padding: 14,
-    gap: 8,
+    backgroundGradient: {
+      type: 'linear',
+      colors: ['#1C1C2E', '#12122A'],
+      startPoint: { x: 0, y: 0 },
+      endPoint: { x: 1, y: 1 },
+    },
+    padding: 16,
+    gap: 10,
     children: [
+
+      // ── 标题行 ──
       {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 7,
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
         children: [
-          { type: 'image', src: 'sf-symbol:server.rack', color: C.accent, width: 16, height: 16 },
-          { type: 'text', text: 'BandwagonHost', font: { size: 'headline', weight: 'bold' }, textColor: C.title, flex: 1, maxLines: 1 },
-          { type: 'image', src: 'sf-symbol:circle.fill', color: statusColor, width: 8, height: 8 },
-          { type: 'text', text: statusText, font: { size: 'caption1' }, textColor: statusColor, maxLines: 1 },
+          { type: 'image', src: 'sf-symbol:server.rack', color: '#0A84FF', width: 18, height: 18 },
+          { type: 'text', text: 'BandwagonHost', font: { size: 'headline', weight: 'bold' }, textColor: '#FFFFFF', flex: 1 },
+          // DC 标签
+          {
+            type: 'stack',
+            direction: 'row',
+            alignItems: 'center',
+            gap: 3,
+            backgroundColor: '#2C2C3E',
+            borderRadius: 6,
+            padding: [2, 6, 2, 6],
+            children: [
+              { type: 'image', src: 'sf-symbol:location.fill', color: '#636366', width: 10, height: 10 },
+              { type: 'text', text: dc, font: { size: 'caption2' }, textColor: '#8E8E93', maxLines: 1, minScale: 0.7 },
+            ],
+          },
         ],
       },
+
+      // ── 流量区 ──
       {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 5,
+        type: 'stack', direction: 'column', gap: 6,
+        backgroundColor: '#2C2C3E',
+        borderRadius: 10,
+        padding: [10, 12, 10, 12],
         children: [
-          { type: 'image', src: 'sf-symbol:location.fill', color: C.fainttext, width: 10, height: 10 },
-          { type: 'text', text: location, font: { size: 'footnote' }, textColor: C.subtext, maxLines: 1 },
+          // 行标题 + 百分比
+          {
+            type: 'stack', direction: 'row', alignItems: 'center',
+            children: [
+              { type: 'image', src: 'sf-symbol:arrow.up.arrow.down', color: '#0A84FF', width: 13, height: 13 },
+              { type: 'spacer', length: 5 },
+              { type: 'text', text: '流量使用', font: { size: 'subheadline', weight: 'semibold' }, textColor: '#EEEEEE', flex: 1 },
+              { type: 'text', text: pct + '%', font: { size: 'subheadline', weight: 'bold' }, textColor: pctColor },
+            ],
+          },
+          // 进度条
+          {
+            type: 'stack', direction: 'row', height: 6, borderRadius: 3,
+            backgroundColor: '#3A3A4C',
+            children: [
+              {
+                type: 'stack', flex: BAR_FILL, height: 6,
+                backgroundColor: barColor, borderRadius: 3,
+                children: [],
+              },
+              { type: 'spacer', length: 0, flex: Math.max(0, 100 - BAR_FILL) },
+            ],
+          },
+          // 已用 / 总量
+          {
+            type: 'stack', direction: 'row', alignItems: 'center',
+            children: [
+              { type: 'text', text: usedStr, font: { size: 'footnote', weight: 'medium' }, textColor: '#FFFFFF' },
+              { type: 'text', text: ' / ' + totalStr, font: { size: 'footnote' }, textColor: '#8E8E93' },
+              { type: 'spacer' },
+              // 重置日期
+              {
+                type: 'stack', direction: 'row', alignItems: 'center', gap: 3,
+                children: [
+                  { type: 'image', src: 'sf-symbol:arrow.clockwise', color: '#636366', width: 10, height: 10 },
+                  { type: 'text', text: '重置 ' + resetStr, font: { size: 'caption2' }, textColor: '#636366' },
+                ],
+              },
+            ],
+          },
         ],
       },
-      metricRow('arrow.up.arrow.down', C.accent, '流量', usedStr, totalStr, trafficPct, trafficColor, BAR_LEN),
-      metricRow('memorychip', '#BF5AF2', '内存', ramUsedStr, ramTotalStr, ramPct, ramColor, BAR_LEN),
-      metricRow('internaldrive', '#FF9F0A', '磁盘', diskUsedStr, diskTotalStr, diskPct, diskColor, BAR_LEN),
-      { type: 'spacer' },
+
+      // ── 内存区 ──
       {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 5,
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
+        backgroundColor: '#2C2C3E',
+        borderRadius: 10,
+        padding: [8, 12, 8, 12],
         children: [
-          { type: 'image', src: 'sf-symbol:arrow.clockwise.circle', color: C.fainttext, width: 12, height: 12 },
-          { type: 'text', text: '重置日期：', font: { size: 'footnote' }, textColor: C.fainttext },
-          { type: 'date', date: resetISO, format: 'date', font: { size: 'footnote', weight: 'medium' }, textColor: C.bodytext },
+          { type: 'image', src: 'sf-symbol:memorychip', color: '#BF5AF2', width: 14, height: 14 },
+          { type: 'text', text: '内存', font: { size: 'footnote', weight: 'semibold' }, textColor: '#EEEEEE' },
           { type: 'spacer' },
-          { type: 'date', date: resetISO, format: 'relative', font: { size: 'footnote' }, textColor: C.resettext },
+          { type: 'text', text: memStr, font: { size: 'footnote', weight: 'medium' }, textColor: '#BF5AF2' },
         ],
       },
+
     ],
   };
 }
