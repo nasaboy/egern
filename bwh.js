@@ -1,29 +1,38 @@
-// Generated: 2026-03-18 03:57:00 UTC
+// Generated: 2026-03-18 04:15:00 UTC
 export default async function (ctx) {
-  const veid = ctx.env.VEID;
+  const veid   = ctx.env.VEID;
   const apiKey = ctx.env.API_KEY;
 
-  // ── 自适应颜色（深色/浅色模式） ───────────────────────────
+  // ── 自适应颜色 ────────────────────────────────────────────
+  // 深色：深蓝黑背景 + 半透明卡片
+  // 浅色：系统浅灰背景 + 纯白卡片
   const C = {
-    bg:        { light: '#F2F2F7',  dark: '#1C1C1E' },
-    card:      { light: '#FFFFFF',  dark: '#2C2C3E' },
-    cardTrack: { light: '#E5E5EA',  dark: '#3A3A4C' },
-    title:     { light: '#000000',  dark: '#FFFFFF' },
-    body:      { light: '#1C1C1E',  dark: '#EEEEEE' },
-    secondary: { light: '#3C3C43',  dark: '#8E8E93' },
-    tertiary:  { light: '#6C6C70',  dark: '#636366' },
-    accent:    '#0A84FF',
-    purple:    '#BF5AF2',
-    green:     '#30D158',
-    warning:   '#FF9F0A',
-    danger:    '#FF453A',
+    // 背景渐变色（深色模式专用，浅色用 bgSolid 纯色）
+    bgGradientDark:  ['#1C1C2E', '#12122A'],
+    bgSolid:         { light: '#F2F2F7',        dark: '#1C1C2E' },
+    // 卡片
+    card:            { light: '#FFFFFF',         dark: 'rgba(255,255,255,0.08)' },
+    cardTrack:       { light: '#E5E5EA',         dark: 'rgba(255,255,255,0.12)' },
+    // DC 标签背景
+    badge:           { light: '#E5E5EA',         dark: 'rgba(255,255,255,0.10)' },
+    // 文字
+    textPrimary:     { light: '#000000',         dark: '#FFFFFF' },
+    textBody:        { light: '#1C1C1E',         dark: '#EEEEEE' },
+    textSecondary:   { light: '#6C6C70',         dark: '#8E8E93' },
+    textTertiary:    { light: '#AEAEB2',         dark: '#636366' },
+    // 强调色（固定，深浅模式均可用）
+    accent:  '#0A84FF',
+    purple:  '#BF5AF2',
+    green:   '#30D158',
+    warning: '#FF9F0A',
+    danger:  '#FF453A',
   };
 
   // ── 错误视图 ──────────────────────────────────────────────
   function errorWidget(msg) {
     return {
       type: 'widget',
-      backgroundColor: C.bg,
+      backgroundColor: C.bgSolid,
       padding: 16,
       gap: 8,
       children: [
@@ -62,13 +71,11 @@ export default async function (ctx) {
   function fmtBytes(bytes) {
     if (bytes == null) return 'N/A';
     const units = ['B', 'KB', 'MB', 'GB'];
-    let val = bytes;
-    let i = 0;
+    let val = bytes, i = 0;
     while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
     return val.toFixed(i === 0 ? 0 : 2) + ' ' + units[i];
   }
 
-  // KB → MB / GB，最大单位 GB
   function fmtMemKb(kb) {
     if (kb == null) return 'N/A';
     if (kb >= 1024 * 1024) return (kb / 1024 / 1024).toFixed(2) + ' GB';
@@ -83,8 +90,6 @@ export default async function (ctx) {
   const usedStr  = fmtBytes(used);
   const totalStr = fmtBytes(total);
 
-  // plan_ram 单位 bytes，mem_available_kb 单位 KB
-  // 已用 = 总量(bytes→KB) - 可用(KB)
   const planRamKb  = info.plan_ram != null ? Math.round(info.plan_ram / 1024) : null;
   const memAvailKb = info.mem_available_kb;
   const memUsedKb  = (planRamKb != null && memAvailKb != null) ? planRamKb - memAvailKb : null;
@@ -92,20 +97,28 @@ export default async function (ctx) {
     ? `${fmtMemKb(memUsedKb)} / ${fmtMemKb(planRamKb)}`
     : 'N/A';
 
-  // 重置日期：data_next_reset 是 Unix 时间戳（秒）
   let resetStr = 'N/A';
   if (info.data_next_reset) {
     const d = new Date(info.data_next_reset * 1000);
     resetStr = `${d.getMonth() + 1}月${d.getDate()}日`;
   }
 
-  const dc = info.node_location || 'N/A';
-
-  // 进度条颜色
+  const dc       = info.node_location || 'N/A';
   const barColor = pct < 70 ? C.green : pct < 90 ? C.warning : C.danger;
-  const pctColor = barColor;
 
-  // ── 锁屏矩形（精简版） ────────────────────────────────────
+  // ── 背景：深色渐变 / 浅色纯色 ────────────────────────────
+  // backgroundGradient 在深色模式生效；浅色模式 Egern 用 backgroundColor 回退
+  const widgetBg = {
+    backgroundColor: C.bgSolid,
+    backgroundGradient: {
+      type: 'linear',
+      colors: C.bgGradientDark,
+      startPoint: { x: 0, y: 0 },
+      endPoint:   { x: 1, y: 1 },
+    },
+  };
+
+  // ── 锁屏矩形 ─────────────────────────────────────────────
   if (ctx.widgetFamily === 'accessoryRectangular') {
     return {
       type: 'widget',
@@ -116,11 +129,11 @@ export default async function (ctx) {
           type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
           children: [
             { type: 'image', src: 'sf-symbol:network', color: C.accent, width: 12, height: 12 },
-            { type: 'text', text: 'BandwagonHost', font: { size: 'caption2', weight: 'bold' }, textColor: C.title, maxLines: 1 },
+            { type: 'text', text: 'BandwagonHost', font: { size: 'caption2', weight: 'bold' }, maxLines: 1 },
           ],
         },
-        { type: 'text', text: `流量 ${usedStr} / ${totalStr}  ${pct}%`, font: { size: 'caption2' }, textColor: C.body, maxLines: 1 },
-        { type: 'text', text: `内存 ${memStr}  重置 ${resetStr}`, font: { size: 'caption2' }, textColor: C.secondary, maxLines: 1 },
+        { type: 'text', text: `流量 ${usedStr} / ${totalStr}  ${pct}%`, font: { size: 'caption2' }, maxLines: 1 },
+        { type: 'text', text: `内存 ${memStr}  重置 ${resetStr}`, font: { size: 'caption2' }, maxLines: 1 },
       ],
     };
   }
@@ -139,11 +152,10 @@ export default async function (ctx) {
   if (ctx.widgetFamily === 'systemSmall') {
     return {
       type: 'widget',
-      backgroundColor: C.bg,
+      ...widgetBg,
       padding: 14,
       gap: 6,
       children: [
-        // 标题行
         {
           type: 'stack', direction: 'row', alignItems: 'center', gap: 5,
           children: [
@@ -152,17 +164,14 @@ export default async function (ctx) {
           ],
         },
         { type: 'spacer' },
-        // 百分比大字
-        { type: 'text', text: pct + '%', font: { size: 'title2', weight: 'bold' }, textColor: pctColor },
-        // 已用/总量
-        { type: 'text', text: `${usedStr}\n/ ${totalStr}`, font: { size: 'caption2' }, textColor: C.secondary },
+        { type: 'text', text: pct + '%', font: { size: 'title2', weight: 'bold' }, textColor: barColor },
+        { type: 'text', text: `${usedStr}\n/ ${totalStr}`, font: { size: 'caption2' }, textColor: C.textSecondary },
         { type: 'spacer' },
-        // DC
         {
           type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
           children: [
-            { type: 'image', src: 'sf-symbol:location.fill', color: C.tertiary, width: 10, height: 10 },
-            { type: 'text', text: dc, font: { size: 'caption2' }, textColor: C.tertiary, maxLines: 1, minScale: 0.6 },
+            { type: 'image', src: 'sf-symbol:location.fill', color: C.textTertiary, width: 10, height: 10 },
+            { type: 'text', text: dc, font: { size: 'caption2' }, textColor: C.textTertiary, maxLines: 1, minScale: 0.6 },
           ],
         },
       ],
@@ -174,7 +183,7 @@ export default async function (ctx) {
 
   return {
     type: 'widget',
-    backgroundColor: C.bg,
+    ...widgetBg,
     padding: 16,
     gap: 10,
     children: [
@@ -184,16 +193,15 @@ export default async function (ctx) {
         type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
         children: [
           { type: 'image', src: 'sf-symbol:server.rack', color: C.accent, width: 18, height: 18 },
-          { type: 'text', text: 'BandwagonHost', font: { size: 'headline', weight: 'bold' }, textColor: C.title, flex: 1 },
-          // DC 标签
+          { type: 'text', text: 'BandwagonHost', font: { size: 'headline', weight: 'bold' }, textColor: C.textPrimary, flex: 1 },
           {
             type: 'stack', direction: 'row', alignItems: 'center', gap: 3,
-            backgroundColor: C.card,
+            backgroundColor: C.badge,
             borderRadius: 6,
             padding: [2, 6, 2, 6],
             children: [
-              { type: 'image', src: 'sf-symbol:location.fill', color: C.tertiary, width: 10, height: 10 },
-              { type: 'text', text: dc, font: { size: 'caption2' }, textColor: C.secondary, maxLines: 1, minScale: 0.7 },
+              { type: 'image', src: 'sf-symbol:location.fill', color: C.textTertiary, width: 10, height: 10 },
+              { type: 'text', text: dc, font: { size: 'caption2' }, textColor: C.textSecondary, maxLines: 1, minScale: 0.7 },
             ],
           },
         ],
@@ -206,14 +214,14 @@ export default async function (ctx) {
         borderRadius: 10,
         padding: [10, 12, 10, 12],
         children: [
-          // 行标题 + 百分比
+          // 标题行 + 百分比
           {
             type: 'stack', direction: 'row', alignItems: 'center',
             children: [
               { type: 'image', src: 'sf-symbol:arrow.up.arrow.down', color: C.accent, width: 13, height: 13 },
               { type: 'spacer', length: 5 },
-              { type: 'text', text: '流量使用', font: { size: 'subheadline', weight: 'semibold' }, textColor: C.body, flex: 1 },
-              { type: 'text', text: pct + '%', font: { size: 'subheadline', weight: 'bold' }, textColor: pctColor },
+              { type: 'text', text: '流量使用', font: { size: 'subheadline', weight: 'semibold' }, textColor: C.textBody, flex: 1 },
+              { type: 'text', text: pct + '%', font: { size: 'subheadline', weight: 'bold' }, textColor: barColor },
             ],
           },
           // 进度条
@@ -229,14 +237,14 @@ export default async function (ctx) {
           {
             type: 'stack', direction: 'row', alignItems: 'center',
             children: [
-              { type: 'text', text: usedStr, font: { size: 'footnote', weight: 'medium' }, textColor: C.title },
-              { type: 'text', text: ' / ' + totalStr, font: { size: 'footnote' }, textColor: C.secondary },
+              { type: 'text', text: usedStr, font: { size: 'footnote', weight: 'medium' }, textColor: C.textPrimary },
+              { type: 'text', text: ' / ' + totalStr, font: { size: 'footnote' }, textColor: C.textSecondary },
               { type: 'spacer' },
               {
                 type: 'stack', direction: 'row', alignItems: 'center', gap: 3,
                 children: [
-                  { type: 'image', src: 'sf-symbol:arrow.clockwise', color: C.tertiary, width: 10, height: 10 },
-                  { type: 'text', text: '重置 ' + resetStr, font: { size: 'caption2' }, textColor: C.tertiary },
+                  { type: 'image', src: 'sf-symbol:arrow.clockwise', color: C.textTertiary, width: 10, height: 10 },
+                  { type: 'text', text: '重置 ' + resetStr, font: { size: 'caption2' }, textColor: C.textTertiary },
                 ],
               },
             ],
@@ -252,7 +260,7 @@ export default async function (ctx) {
         padding: [8, 12, 8, 12],
         children: [
           { type: 'image', src: 'sf-symbol:memorychip', color: C.purple, width: 14, height: 14 },
-          { type: 'text', text: '内存', font: { size: 'footnote', weight: 'semibold' }, textColor: C.body },
+          { type: 'text', text: '内存', font: { size: 'footnote', weight: 'semibold' }, textColor: C.textBody },
           { type: 'spacer' },
           { type: 'text', text: memStr, font: { size: 'footnote', weight: 'medium' }, textColor: C.purple },
         ],
