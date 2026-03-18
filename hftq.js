@@ -415,9 +415,10 @@ export default async function (ctx) {
     {
       type: "stack",
       direction: "column",
+      alignItems: "center",
       gap: 4,
       children: [
-        // 第一行：图标 + 大温度
+        // 图标 + 大温度
         {
           type: "stack",
           direction: "row",
@@ -441,7 +442,7 @@ export default async function (ctx) {
             },
           ],
         },
-        // 第二行：天气状况 + 体感温度
+        // 天气状况 + 体感温度居中
         {
           type: "stack",
           direction: "row",
@@ -460,7 +461,6 @@ export default async function (ctx) {
               font: { size: "subheadline" },
               textColor: "#FFFFFF88",
             },
-            { type: "spacer" },
           ],
         },
       ],
