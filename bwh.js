@@ -7,7 +7,7 @@ export default async function (ctx) {
   const C = {
     // 小组件底色
     // 深色：深蓝灰  浅色：iOS 标准 grouped 背景
-    bg:           { light: '#E8F0FB',    dark: '#1C1C2E' },
+    bg:           { light: '#87CEFA',    dark: '#1C1C2E' },
     // 卡片（流量区、内存区）
     // 深色：稍亮的深蓝  浅色：纯白
     card:         { light: '#FFFFFF',    dark: '#28283C' },
