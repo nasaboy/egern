@@ -1,4 +1,4 @@
-// Generated: 2026-03-18 04:38:00 UTC
+// Generated: 2026-03-18 04:44:00 UTC
 export default async function (ctx) {
   const veid   = ctx.env.VEID;
   const apiKey = ctx.env.API_KEY;
@@ -7,16 +7,15 @@ export default async function (ctx) {
   const C = {
     // 小组件底色
     // 深色：深蓝灰  浅色：iOS 标准 grouped 背景
-    bg:           { light: '#87CEFA',    dark: '#1C1C2E' },
+    bg:           { light: '#87CEEB',    dark: '#1C1C2E' },
     // 卡片（流量区、内存区）
-    // 深色：稍亮的深蓝  浅色：纯白
-    card:         { light: '#FFFFFF',    dark: '#28283C' },
+    // 深色：稍亮的深蓝  浅色：淡蓝白，与底色协调不突兀
+    card:         { light: '#D6EEFA',    dark: '#28283C' },
     // 进度条轨道
-    // 深色：更深的蓝灰  浅色：系统分隔线灰
-    track:        { light: '#E5E5EA',    dark: '#3A3A50' },
+    // 深色：更深的蓝灰  浅色：稍深一点的蓝
+    track:        { light: '#A8D8EA',    dark: '#3A3A50' },
     // DC 角标背景
-    // 深色：半透明深蓝  浅色：浅灰
-    badge:        { light: '#E5E5EA',    dark: '#33334A' },
+    badge:        { light: '#A8D8EA',    dark: '#33334A' },
 
     // 文字
     t1:           { light: '#000000',    dark: '#F2F2F7' },   // 主标题、数值
