@@ -1,4 +1,5 @@
 // 和风天气小组件 for Egern
+// version 2
 // 环境变量（在 widgets env 中配置）：
 //   QW_HOST     - 你的 API Host，例如 abcxyz.qweatherapi.com
 //   QW_KEY      - 你的 API Key
@@ -411,58 +412,41 @@ export default async function (ctx) {
       ],
     },
     { type: "spacer", length: 6 },
-    // 中部：大温度 + 图标
+    // 中部：图标 + 温度 + 天气状况 + 体感温度，横向一排
     {
       type: "stack",
-      direction: "column",
+      direction: "row",
       alignItems: "center",
-      gap: 4,
+      gap: 10,
       children: [
-        // 图标 + 大温度
         {
-          type: "stack",
-          direction: "row",
-          alignItems: "center",
-          gap: 8,
-          children: [
-            {
-              type: "image",
-              src: weatherIconSrc,
-              color: "#FFFFFF",
-              width: 48,
-              height: 48,
-            },
-            {
-              type: "text",
-              text: `${now.temp}°`,
-              font: { size: "largeTitle", weight: "bold" },
-              textColor: "#FFFFFF",
-              maxLines: 1,
-              minScale: 0.7,
-            },
-          ],
+          type: "image",
+          src: weatherIconSrc,
+          color: "#FFFFFF",
+          width: 48,
+          height: 48,
         },
-        // 天气状况 + 体感温度居中
         {
-          type: "stack",
-          direction: "row",
-          alignItems: "center",
-          gap: 8,
-          children: [
-            {
-              type: "text",
-              text: now.text,
-              font: { size: "subheadline" },
-              textColor: "#FFFFFFCC",
-            },
-            {
-              type: "text",
-              text: `体感 ${now.feelsLike}°`,
-              font: { size: "subheadline" },
-              textColor: "#FFFFFF88",
-            },
-          ],
+          type: "text",
+          text: `${now.temp}°`,
+          font: { size: "largeTitle", weight: "bold" },
+          textColor: "#FFFFFF",
+          maxLines: 1,
+          minScale: 0.7,
         },
+        {
+          type: "text",
+          text: now.text,
+          font: { size: "subheadline" },
+          textColor: "#FFFFFFCC",
+        },
+        {
+          type: "text",
+          text: `体感 ${now.feelsLike}°`,
+          font: { size: "subheadline" },
+          textColor: "#FFFFFF88",
+        },
+        { type: "spacer" },
       ],
     },
     { type: "spacer" },
