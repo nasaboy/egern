@@ -1,5 +1,5 @@
 // 和风天气小组件 for Egern
-// version 2
+// version 3
 // 环境变量（在 widgets env 中配置）：
 //   QW_HOST     - 你的 API Host，例如 abcxyz.qweatherapi.com
 //   QW_KEY      - 你的 API Key
@@ -449,7 +449,7 @@ export default async function (ctx) {
         { type: "spacer" },
       ],
     },
-    { type: "spacer" },
+    { type: "spacer", length: 12 },
     // 底部详情行：湿度 / 风力 / AQI / 能见度
     {
       type: "stack",
