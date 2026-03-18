@@ -61,11 +61,11 @@ export default async function (ctx) {
     }
     const loc = geoData.location[0];
     geoInfo = {
-      id:   loc.id,        // LocationID，用于天气接口
-      lat:  loc.lat,       // 纬度，用于空气质量接口
-      lon:  loc.lon,       // 经度，用于空气质量接口
-      name: loc.name,      // 城市名
-      adm1: loc.adm1,      // 一级行政区（省/直辖市）
+      id:   loc.id,
+      lat:  loc.lat,
+      lon:  loc.lon,
+      name: loc.name,
+      adm1: loc.adm1,
     };
     // GeoAPI 结果缓存 24 小时（城市信息基本不变）
     ctx.storage.setJSON(geoCacheKey, geoInfo);
@@ -414,30 +414,40 @@ export default async function (ctx) {
     // 中部：大温度 + 图标
     {
       type: "stack",
-      direction: "row",
-      alignItems: "center",
-      gap: 12,
+      direction: "column",
+      gap: 4,
       children: [
-        {
-          type: "image",
-          src: weatherIconSrc,
-          color: "#FFFFFF",
-          width: 52,
-          height: 52,
-        },
+        // 第一行：图标 + 大温度
         {
           type: "stack",
-          direction: "column",
-          gap: 2,
+          direction: "row",
+          alignItems: "center",
+          gap: 8,
           children: [
             {
+              type: "image",
+              src: weatherIconSrc,
+              color: "#FFFFFF",
+              width: 48,
+              height: 48,
+            },
+            {
               type: "text",
-              text: `${now.temp}°C`,
+              text: `${now.temp}°`,
               font: { size: "largeTitle", weight: "bold" },
               textColor: "#FFFFFF",
               maxLines: 1,
               minScale: 0.7,
             },
+          ],
+        },
+        // 第二行：天气状况 + 体感温度
+        {
+          type: "stack",
+          direction: "row",
+          alignItems: "center",
+          gap: 8,
+          children: [
             {
               type: "text",
               text: now.text,
@@ -447,9 +457,10 @@ export default async function (ctx) {
             {
               type: "text",
               text: `体感 ${now.feelsLike}°`,
-              font: { size: "footnote" },
+              font: { size: "subheadline" },
               textColor: "#FFFFFF88",
             },
+            { type: "spacer" },
           ],
         },
       ],
