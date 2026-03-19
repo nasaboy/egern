@@ -108,8 +108,10 @@ export default async function (ctx) {
   const aqi = rt.air_quality?.aqi?.chn ?? '-';
   const aqiDesc = rt.air_quality?.description?.chn ?? '-';
   const aqiColorVal = aqiColor(aqiDesc);
-  const uvDesc = (rt.life_index && rt.life_index.ultraviolet) ? rt.life_index.ultraviolet.desc : '-';
-  const comfortDesc = (rt.life_index && rt.life_index.comfort) ? rt.life_index.comfort.desc : '-';
+  const uvIndex = rt.life_index?.ultraviolet?.index ?? '-';
+  const uvDesc = rt.life_index?.ultraviolet?.desc ?? '-';
+  const comfortIndex = rt.life_index?.comfort?.index ?? '-';
+  const comfortDesc = rt.life_index?.comfort?.desc ?? '-';
 
   const refreshAfter = new Date(Date.now() + 30 * 60 * 1000).toISOString();
   const now = new Date();
@@ -256,8 +258,8 @@ export default async function (ctx) {
         {
           type: 'stack', direction: 'column', alignItems: 'start', gap: 4,
           children: [
-            { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: '#FFD60A', width: 11, height: 11 }, { type: 'text', text: '紫外线  ' + uvDesc, font: { size: 'caption2' }, textColor: '#FFFFFF99' }] },
-            { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: '#FF9500', width: 11, height: 11 }, { type: 'text', text: '舒适度  ' + comfortDesc, font: { size: 'caption2' }, textColor: '#FFFFFF99' }] },
+            { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: '#FFD60A', width: 11, height: 11 }, { type: 'text', text: '紫外线  ' + uvIndex + ' ' + uvDesc, font: { size: 'caption2' }, textColor: '#FFFFFF99' }] },
+            { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: '#FF9500', width: 11, height: 11 }, { type: 'text', text: '舒适度  ' + comfortIndex + ' ' + comfortDesc, font: { size: 'caption2' }, textColor: '#FFFFFF99' }] },
           ],
         },
       ],
@@ -314,7 +316,7 @@ export default async function (ctx) {
             children: [
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:humidity.fill', color: '#64B5F6', width: 13, height: 13 }, { type: 'text', text: '相对湿度', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: humidity + '%', font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: '#90CAF9', width: 13, height: 13 }, { type: 'text', text: '风速风向', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: windDirText + '风 ' + windSpeed + ' m/s', font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
-              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: '#FFD60A', width: 13, height: 13 }, { type: 'text', text: '紫外线', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: uvDesc, font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
+              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: '#FFD60A', width: 13, height: 13 }, { type: 'text', text: '紫外线', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: uvIndex + ' ' + uvDesc, font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
             ],
           },
           {
@@ -322,7 +324,7 @@ export default async function (ctx) {
             children: [
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:aqi.medium', color: aqiColorVal, width: 13, height: 13 }, { type: 'text', text: '空气质量 AQI', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: aqi + '  ' + aqiDesc, font: { size: 'title3', weight: 'semibold' }, textColor: aqiColorVal }] },
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:eye.fill', color: '#80DEEA', width: 13, height: 13 }, { type: 'text', text: '能见度', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: visibility + ' km', font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
-              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: '#FF9500', width: 13, height: 13 }, { type: 'text', text: '舒适度', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: comfortDesc, font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
+              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: '#FF9500', width: 13, height: 13 }, { type: 'text', text: '舒适度', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: comfortIndex + ' ' + comfortDesc, font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
             ],
           },
         ],
