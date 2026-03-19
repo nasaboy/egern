@@ -1,11 +1,11 @@
 // 彩云天气小组件 for Egern
 // 环境变量：
-//   CAIYUN_TOKEN  - 彩云天气 API Token（必填）
-//   LONGITUDE     - 经度，如 121.4737（必填）
-//   LATITUDE      - 纬度，如 31.2304（必填）
+//   TOKEN     - 彩云天气 API Token（必填）
+//   LONGITUDE - 经度，如 121.4737（必填）
+//   LATITUDE  - 纬度，如 31.2304（必填）
 
 export default async function (ctx) {
-  const token = ctx.env.CAIYUN_TOKEN;
+  const token = ctx.env.TOKEN;
   const lon = ctx.env.LONGITUDE || '121.4737';
   const lat = ctx.env.LATITUDE || '31.2304';
 
@@ -69,24 +69,28 @@ export default async function (ctx) {
     };
   }
 
-  if (!token) return errorWidget('请配置 CAIYUN_TOKEN 环境变量');
+  if (!token) return errorWidget('请配置 TOKEN 环境变量');
 
-  // 并行请求：天气实况 + 行政区划
-  let data, locationName;
+  // 天气实况请求
+  let data;
   try {
     const weatherUrl = 'https://api.caiyunapp.com/v2.6/' + token + '/' + lon + ',' + lat + '/realtime';
-    const adminUrl = 'https://singer.caiyunhub.com/v3/cartography/reverse_admins?longitude=' + lon + '&latitude=' + lat + '&token=' + token;
-    const results = await Promise.all([
-      ctx.http.get(weatherUrl, { timeout: 15000 }),
-      ctx.http.get(adminUrl, { timeout: 15000 }),
-    ]);
-    data = await results[0].json();
-    const adminData = await results[1].json();
-    const admins = adminData && adminData.admins;
-    // 取 admins 最后一级（最精确的区级）
-    locationName = (admins && admins.length > 0) ? admins[admins.length - 1].name : '未知位置';
+    const resp = await ctx.http.get(weatherUrl, { timeout: 15000 });
+    data = await resp.json();
   } catch (e) {
     return errorWidget('网络请求失败: ' + e.message);
+  }
+
+  // 行政区划请求（失败时降级，不影响天气数据展示）
+  let locationName = '未知位置';
+  try {
+    const adminUrl = 'https://singer.caiyunhub.com/v3/cartography/reverse_admins?longitude=' + lon + '&latitude=' + lat + '&token=' + token;
+    const adminResp = await ctx.http.get(adminUrl, { timeout: 10000 });
+    const adminData = await adminResp.json();
+    const admins = adminData && adminData.admins;
+    if (admins && admins.length > 0) locationName = admins[admins.length - 1].name;
+  } catch (_) {
+    // 地名查询失败不影响主流程
   }
 
   if (data.status !== 'ok' || !data.result || data.result.realtime.status !== 'ok') {
@@ -153,7 +157,7 @@ export default async function (ctx) {
           ],
         },
         { type: 'text', text: temp + 'C  体感 ' + feelTemp + 'C  湿度 ' + humidity + '%', font: { size: 'caption1' }, textColor: '#FFFFFFCC', maxLines: 1 },
-        { type: 'text', text: windDirText + 'wind ' + windSpeed + ' m/s  AQI ' + aqi + ' ' + aqiDesc, font: { size: 'caption1' }, textColor: '#FFFFFFAA', maxLines: 1 },
+        { type: 'text', text: windDirText + '风 ' + windSpeed + ' m/s  AQI ' + aqi + ' ' + aqiDesc, font: { size: 'caption1' }, textColor: '#FFFFFFAA', maxLines: 1 },
       ],
     };
   }
@@ -228,8 +232,8 @@ export default async function (ctx) {
               type: 'stack', direction: 'column', alignItems: 'start', gap: 2, flex: 1,
               children: [
                 { type: 'image', src: 'sf-symbol:' + sky.symbol, color: sky.color, width: 44, height: 44 },
-                { type: 'text', text: temp + 'C', font: { size: 'title', weight: 'bold' }, textColor: '#FFFFFF' },
-                { type: 'text', text: sky.text + '  体感 ' + feelTemp + 'C', font: { size: 'caption1' }, textColor: '#FFFFFFBB' },
+                { type: 'text', text: temp + '°C', font: { size: 'title', weight: 'bold' }, textColor: '#FFFFFF' },
+                { type: 'text', text: sky.text + '  体感 ' + feelTemp + '°C', font: { size: 'caption1' }, textColor: '#FFFFFFBB' },
               ],
             },
             { type: 'stack', direction: 'column', width: 1, height: 80, backgroundColor: '#FFFFFF20', children: [] },
@@ -237,7 +241,7 @@ export default async function (ctx) {
               type: 'stack', direction: 'column', alignItems: 'start', gap: 7, padding: [0, 0, 0, 14], flex: 1,
               children: [
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:humidity.fill', color: '#64B5F6', width: 12, height: 12 }, { type: 'text', text: '湿度  ' + humidity + '%', font: { size: 'caption1' }, textColor: '#FFFFFFCC' }] },
-                { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: '#90CAF9', width: 12, height: 12 }, { type: 'text', text: windDirText + 'wind  ' + windSpeed + ' m/s', font: { size: 'caption1' }, textColor: '#FFFFFFCC' }] },
+                { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: '#90CAF9', width: 12, height: 12 }, { type: 'text', text: windDirText + '风  ' + windSpeed + ' m/s', font: { size: 'caption1' }, textColor: '#FFFFFFCC' }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:eye.fill', color: '#80DEEA', width: 12, height: 12 }, { type: 'text', text: '能见度  ' + visibility + ' km', font: { size: 'caption1' }, textColor: '#FFFFFFCC' }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:aqi.medium', color: aqiColorVal, width: 12, height: 12 }, { type: 'text', text: 'AQI  ' + aqi + ' ' + aqiDesc, font: { size: 'caption1', weight: 'semibold' }, textColor: aqiColorVal }] },
               ],
@@ -286,9 +290,9 @@ export default async function (ctx) {
           {
             type: 'stack', direction: 'column', alignItems: 'start', gap: 4,
             children: [
-              { type: 'text', text: temp + 'C', font: { size: 'largeTitle', weight: 'bold' }, textColor: '#FFFFFF' },
+              { type: 'text', text: temp + '°C', font: { size: 'largeTitle', weight: 'bold' }, textColor: '#FFFFFF' },
               { type: 'text', text: sky.text, font: { size: 'title3' }, textColor: '#FFFFFFCC' },
-              { type: 'text', text: '体感温度 ' + feelTemp + 'C', font: { size: 'subheadline' }, textColor: '#FFFFFFAA' },
+              { type: 'text', text: '体感温度 ' + feelTemp + '°C', font: { size: 'subheadline' }, textColor: '#FFFFFFAA' },
             ],
           },
         ],
@@ -303,7 +307,7 @@ export default async function (ctx) {
             type: 'stack', direction: 'column', alignItems: 'start', gap: 14, flex: 1,
             children: [
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:humidity.fill', color: '#64B5F6', width: 13, height: 13 }, { type: 'text', text: '相对湿度', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: humidity + '%', font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
-              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: '#90CAF9', width: 13, height: 13 }, { type: 'text', text: '风速风向', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: windDirText + 'wind ' + windSpeed + ' m/s', font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
+              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: '#90CAF9', width: 13, height: 13 }, { type: 'text', text: '风速风向', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: windDirText + '风 ' + windSpeed + ' m/s', font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: '#FFD60A', width: 13, height: 13 }, { type: 'text', text: '紫外线', font: { size: 'caption1' }, textColor: '#FFFFFF88' }] }, { type: 'text', text: uvDesc, font: { size: 'title3', weight: 'semibold' }, textColor: '#FFFFFF' }] },
             ],
           },
