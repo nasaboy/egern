@@ -38,24 +38,24 @@ export default async function (ctx) {
 
   // 自适应颜色常量
   const C = {
-    bg1:       { dark: '#1C3A5E', light: '#E8F4FD' },
-    bg2:       { dark: '#0F2040', light: '#D0E8F8' },
-    bg3:       { dark: '#0A1A30', light: '#B8D8F0' },
-    bgError1:  { dark: '#1C2340', light: '#EEF2FF' },
-    bgError2:  { dark: '#0F1629', light: '#D8DEF8' },
-    textPri:   { dark: '#FFFFFF',   light: '#0D1B2A' },
-    textSec:   { dark: '#FFFFFFCC', light: '#1A3A5C' },
-    textTer:   { dark: '#FFFFFFAA', light: '#2A5080' },
-    textMuted: { dark: '#FFFFFF99', light: '#4A708A' },
-    textDim:   { dark: '#FFFFFF88', light: '#5A80A0' },
-    textFaint: { dark: '#FFFFFF66', light: '#7A9AB8' },
-    divider:   { dark: '#FFFFFF20', light: '#0D1B2A20' },
-    locIcon:   { dark: '#64B5F6',   light: '#1565C0' },
-    humIcon:   { dark: '#64B5F6',   light: '#1565C0' },
-    windIcon:  { dark: '#90CAF9',   light: '#1976D2' },
-    visIcon:   { dark: '#80DEEA',   light: '#00838F' },
-    uvIcon:    { dark: '#FFD60A',   light: '#F57F17' },
-    feelIcon:  { dark: '#FF9500',   light: '#E65100' },
+    bg1:       { dark: '#1C3A5E', light: '#5B9BD5' },
+    bg2:       { dark: '#0F2040', light: '#3A7BBF' },
+    bg3:       { dark: '#0A1A30', light: '#2060A8' },
+    bgError1:  { dark: '#1C2340', light: '#4A6FA5' },
+    bgError2:  { dark: '#0F1629', light: '#2E5490' },
+    textPri:   { dark: '#FFFFFF',   light: '#FFFFFF' },
+    textSec:   { dark: '#FFFFFFCC', light: '#FFFFFFDD' },
+    textTer:   { dark: '#FFFFFFAA', light: '#FFFFFFBB' },
+    textMuted: { dark: '#FFFFFF99', light: '#FFFFFFAA' },
+    textDim:   { dark: '#FFFFFF88', light: '#FFFFFF99' },
+    textFaint: { dark: '#FFFFFF66', light: '#FFFFFF88' },
+    divider:   { dark: '#FFFFFF20', light: '#FFFFFF30' },
+    locIcon:   { dark: '#64B5F6',   light: '#B3D9FF' },
+    humIcon:   { dark: '#64B5F6',   light: '#B3D9FF' },
+    windIcon:  { dark: '#90CAF9',   light: '#C5E3FF' },
+    visIcon:   { dark: '#80DEEA',   light: '#B2EBF2' },
+    uvIcon:    { dark: '#FFD60A',   light: '#FFE566' },
+    feelIcon:  { dark: '#FF9500',   light: '#FFBB55' },
   };
   function aqiColor(desc) {
     const map = { '优': '#4CAF50', '良': '#8BC34A', '轻度污染': '#FFC107', '中度污染': '#FF9800', '重度污染': '#F44336', '严重污染': '#9C27B0' };
@@ -179,7 +179,7 @@ export default async function (ctx) {
           ],
         },
         { type: 'text', text: temp + 'C  体感 ' + feelTemp + 'C  湿度 ' + humidity + '%', font: { size: 'caption1' }, textColor: C.textSec, maxLines: 1 },
-        { type: 'text', text: windDirText + '风 ' + windSpeed + ' m/s  AQI ' + aqi + ' ' + aqiDesc, font: { size: 'caption1' }, textColor: C.textTer, maxLines: 1 },
+        { type: 'text', text: windDirText + '风 ' + windSpeed + ' km/h  AQI ' + aqi + ' ' + aqiDesc, font: { size: 'caption1' }, textColor: C.textTer, maxLines: 1 },
       ],
     };
   }
@@ -268,7 +268,7 @@ export default async function (ctx) {
               type: 'stack', direction: 'column', alignItems: 'start', gap: 5, padding: [0, 0, 0, 14], flex: 1,
               children: [
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:humidity.fill', color: C.humIcon, width: 12, height: 12 }, { type: 'text', text: '湿度  ' + humidity + '%', font: { size: 'caption1' }, textColor: C.textSec }] },
-                { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: C.windIcon, width: 12, height: 12 }, { type: 'text', text: windDirText + '风  ' + windSpeed + ' m/s', font: { size: 'caption1' }, textColor: C.textSec }] },
+                { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: C.windIcon, width: 12, height: 12 }, { type: 'text', text: windDirText + '风  ' + windSpeed + ' km/h', font: { size: 'caption1' }, textColor: C.textSec }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:eye.fill', color: C.visIcon, width: 12, height: 12 }, { type: 'text', text: '能见度  ' + visibility + ' km', font: { size: 'caption1' }, textColor: C.textSec }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:aqi.medium', color: aqiColorVal, width: 12, height: 12 }, { type: 'text', text: 'AQI  ' + aqi + ' ' + aqiDesc, font: { size: 'caption1', weight: 'semibold' }, textColor: aqiColorVal }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: C.feelIcon, width: 12, height: 12 }, { type: 'text', text: '舒适度  ' + comfortIndex + ' ' + comfortDesc, font: { size: 'caption1' }, textColor: C.textMuted }] },
@@ -330,7 +330,7 @@ export default async function (ctx) {
             type: 'stack', direction: 'column', alignItems: 'start', gap: 14, flex: 1,
             children: [
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:humidity.fill', color: C.humIcon, width: 13, height: 13 }, { type: 'text', text: '相对湿度', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: humidity + '%', font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
-              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: C.windIcon, width: 13, height: 13 }, { type: 'text', text: '风速风向', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: windDirText + '风 ' + windSpeed + ' m/s', font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
+              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: C.windIcon, width: 13, height: 13 }, { type: 'text', text: '风速风向', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: windDirText + '风 ' + windSpeed + ' km/h', font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:eye.fill', color: C.visIcon, width: 13, height: 13 }, { type: 'text', text: '能见度', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: visibility + ' km', font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
             ],
           },
