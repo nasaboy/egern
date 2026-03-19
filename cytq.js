@@ -6,8 +6,8 @@
 
 export default async function (ctx) {
   const token = ctx.env.TOKEN;
-  const lon = ctx.env.LONGITUDE || '121.4737';
-  const lat = ctx.env.LATITUDE || '31.2304';
+  const lon = ctx.env.LONGITUDE || '116.3795';
+  const lat = ctx.env.LATITUDE || '39.9094';
 
   // 天气现象 -> 中文 & SF Symbol
   function skyconInfo(skycon) {
@@ -123,14 +123,23 @@ export default async function (ctx) {
     return errorWidget('网络请求失败: ' + e.message);
   }
 
-  // 行政区划请求（失败时降级，不影响天气数据展示）
+  // 行政区划请求（坐标未变时读缓存，失败时降级）
   let locationName = '未知位置';
   try {
-    const adminUrl = 'https://singer.caiyunhub.com/v3/cartography/reverse_admins?longitude=' + lon + '&latitude=' + lat + '&token=' + token;
-    const adminResp = await ctx.http.get(adminUrl, { timeout: 10000 });
-    const adminData = await adminResp.json();
-    const admins = adminData && adminData.admins;
-    if (admins && admins.length > 0) locationName = admins[admins.length - 1].name;
+    const coordKey = lon + ',' + lat;
+    const cached = ctx.storage.getJSON('location_cache');
+    if (cached && cached.coord === coordKey) {
+      locationName = cached.name;
+    } else {
+      const adminUrl = 'https://singer.caiyunhub.com/v3/cartography/reverse_admins?longitude=' + lon + '&latitude=' + lat + '&token=' + token;
+      const adminResp = await ctx.http.get(adminUrl, { timeout: 10000 });
+      const adminData = await adminResp.json();
+      const admins = adminData && adminData.admins;
+      if (admins && admins.length > 0) {
+        locationName = admins[admins.length - 1].name;
+        ctx.storage.setJSON('location_cache', { coord: coordKey, name: locationName });
+      }
+    }
   } catch (_) {
     // 地名查询失败不影响主流程
   }
