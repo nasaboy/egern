@@ -179,8 +179,10 @@ export default async function (ctx) {
         {
           type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
           children: [
+            { type: 'spacer' },
             { type: 'image', src: 'sf-symbol:location.fill', color: '#64B5F6', width: 10, height: 10 },
             { type: 'text', text: locationName, font: { size: 'caption1', weight: 'medium' }, textColor: '#FFFFFFCC', maxLines: 1, minScale: 0.8 },
+            { type: 'spacer' },
           ],
         },
         { type: 'spacer' },
@@ -219,8 +221,10 @@ export default async function (ctx) {
         {
           type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
           children: [
+            { type: 'spacer' },
             { type: 'image', src: 'sf-symbol:location.fill', color: '#64B5F6', width: 11, height: 11 },
-            { type: 'text', text: locationName, font: { size: 'caption1', weight: 'medium' }, textColor: '#FFFFFFCC', flex: 1, maxLines: 1 },
+            { type: 'text', text: locationName, font: { size: 'caption1', weight: 'medium' }, textColor: '#FFFFFFCC', maxLines: 1 },
+            { type: 'spacer' },
             { type: 'text', text: updateTime, font: { size: 'caption2' }, textColor: '#FFFFFF66' },
           ],
         },
@@ -250,10 +254,10 @@ export default async function (ctx) {
         },
         { type: 'spacer' },
         {
-          type: 'stack', direction: 'row', alignItems: 'center', gap: 0,
+          type: 'stack', direction: 'column', alignItems: 'start', gap: 4,
           children: [
-            { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, flex: 1, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: '#FFD60A', width: 11, height: 11 }, { type: 'text', text: '紫外线  ' + uvDesc, font: { size: 'caption2' }, textColor: '#FFFFFF99' }] },
-            { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, flex: 1, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: '#FF9500', width: 11, height: 11 }, { type: 'text', text: '舒适度  ' + comfortDesc, font: { size: 'caption2' }, textColor: '#FFFFFF99' }] },
+            { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: '#FFD60A', width: 11, height: 11 }, { type: 'text', text: '紫外线  ' + uvDesc, font: { size: 'caption2' }, textColor: '#FFFFFF99' }] },
+            { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: '#FF9500', width: 11, height: 11 }, { type: 'text', text: '舒适度  ' + comfortDesc, font: { size: 'caption2' }, textColor: '#FFFFFF99' }] },
           ],
         },
       ],
@@ -277,8 +281,10 @@ export default async function (ctx) {
       {
         type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
         children: [
+          { type: 'spacer' },
           { type: 'image', src: 'sf-symbol:location.fill', color: '#64B5F6', width: 12, height: 12 },
-          { type: 'text', text: locationName, font: { size: 'subheadline', weight: 'semibold' }, textColor: '#FFFFFFDD', flex: 1 },
+          { type: 'text', text: locationName, font: { size: 'subheadline', weight: 'semibold' }, textColor: '#FFFFFFDD' },
+          { type: 'spacer' },
           { type: 'text', text: updateTime, font: { size: 'caption1' }, textColor: '#FFFFFF66' },
         ],
       },
