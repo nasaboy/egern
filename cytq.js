@@ -68,6 +68,28 @@ export default async function (ctx) {
     return dirs[Math.round(deg / 45) % 8];
   }
 
+  // 风速(km/h) -> 风力等级
+  function windLevel(speed) {
+    if (speed < 1)   return 0;
+    if (speed <= 5)  return 1;
+    if (speed <= 11) return 2;
+    if (speed <= 19) return 3;
+    if (speed <= 28) return 4;
+    if (speed <= 38) return 5;
+    if (speed <= 49) return 6;
+    if (speed <= 61) return 7;
+    if (speed <= 74) return 8;
+    if (speed <= 88) return 9;
+    if (speed <= 102) return 10;
+    if (speed <= 117) return 11;
+    if (speed <= 133) return 12;
+    if (speed <= 149) return 13;
+    if (speed <= 166) return 14;
+    if (speed <= 183) return 15;
+    if (speed <= 201) return 16;
+    return 17;
+  }
+
   // 错误占位组件
   function errorWidget(msg) {
     return {
@@ -124,6 +146,7 @@ export default async function (ctx) {
   const humidity = Math.round(rt.humidity * 100);
   const windSpeed = rt.wind.speed.toFixed(1);
   const windDirText = windDir(rt.wind.direction);
+  const windLv = windLevel(rt.wind.speed);
   const visibility = rt.visibility.toFixed(1);
   const aqi = rt.air_quality?.aqi?.chn ?? '-';
   const aqiDesc = rt.air_quality?.description?.chn ?? '-';
@@ -179,7 +202,7 @@ export default async function (ctx) {
           ],
         },
         { type: 'text', text: temp + 'C  体感 ' + feelTemp + 'C  湿度 ' + humidity + '%', font: { size: 'caption1' }, textColor: C.textSec, maxLines: 1 },
-        { type: 'text', text: windDirText + '风 ' + windSpeed + ' km/h  AQI ' + aqi + ' ' + aqiDesc, font: { size: 'caption1' }, textColor: C.textTer, maxLines: 1 },
+        { type: 'text', text: windDirText + '风 ' + windLv + '级 ' + windSpeed + ' km/h  AQI ' + aqi + ' ' + aqiDesc, font: { size: 'caption1' }, textColor: C.textTer, maxLines: 1 },
       ],
     };
   }
@@ -268,7 +291,7 @@ export default async function (ctx) {
               type: 'stack', direction: 'column', alignItems: 'start', gap: 5, padding: [0, 0, 0, 14], flex: 1,
               children: [
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:humidity.fill', color: C.humIcon, width: 12, height: 12 }, { type: 'text', text: '湿度  ' + humidity + '%', font: { size: 'caption1' }, textColor: C.textSec }] },
-                { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: C.windIcon, width: 12, height: 12 }, { type: 'text', text: windDirText + '风  ' + windSpeed + ' km/h', font: { size: 'caption1' }, textColor: C.textSec }] },
+                { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: C.windIcon, width: 12, height: 12 }, { type: 'text', text: windDirText + '风  ' + windLv + '级 ' + windSpeed + ' km/h', font: { size: 'caption1' }, textColor: C.textSec }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:eye.fill', color: C.visIcon, width: 12, height: 12 }, { type: 'text', text: '能见度  ' + visibility + ' km', font: { size: 'caption1' }, textColor: C.textSec }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:aqi.medium', color: aqiColorVal, width: 12, height: 12 }, { type: 'text', text: 'AQI  ' + aqi + ' ' + aqiDesc, font: { size: 'caption1', weight: 'semibold' }, textColor: aqiColorVal }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: C.feelIcon, width: 12, height: 12 }, { type: 'text', text: '舒适度  ' + comfortIndex + ' ' + comfortDesc, font: { size: 'caption1' }, textColor: C.textMuted }] },
@@ -330,7 +353,7 @@ export default async function (ctx) {
             type: 'stack', direction: 'column', alignItems: 'start', gap: 14, flex: 1,
             children: [
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:humidity.fill', color: C.humIcon, width: 13, height: 13 }, { type: 'text', text: '相对湿度', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: humidity + '%', font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
-              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: C.windIcon, width: 13, height: 13 }, { type: 'text', text: '风速风向', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: windDirText + '风 ' + windSpeed + ' km/h', font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
+              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: C.windIcon, width: 13, height: 13 }, { type: 'text', text: '风速风向', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: windDirText + '风 ' + windLv + '级 ' + windSpeed + ' km/h', font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:eye.fill', color: C.visIcon, width: 13, height: 13 }, { type: 'text', text: '能见度', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: visibility + ' km', font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
             ],
           },
