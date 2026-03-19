@@ -160,9 +160,7 @@ export default async function (ctx) {
   const aqi = rt.air_quality?.aqi?.chn ?? '-';
   const aqiDesc = rt.air_quality?.description?.chn ?? '-';
   const aqiColorVal = aqiColor(aqiDesc);
-  const uvIndex = rt.life_index?.ultraviolet?.index ?? '-';
   const uvDesc = rt.life_index?.ultraviolet?.desc ?? '-';
-  const comfortIndex = rt.life_index?.comfort?.index ?? '-';
   const comfortDesc = rt.life_index?.comfort?.desc ?? '-';
 
   const refreshAfter = new Date(Date.now() + 30 * 60 * 1000).toISOString();
@@ -292,7 +290,7 @@ export default async function (ctx) {
                 { type: 'image', src: 'sf-symbol:' + sky.symbol, color: sky.color, width: 44, height: 44 },
                 { type: 'text', text: temp + '°C', font: { size: 'title', weight: 'bold' }, textColor: C.textPri },
                 { type: 'text', text: sky.text + '  体感 ' + feelTemp + '°C', font: { size: 'caption1' }, textColor: C.textSec },
-                { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: C.uvIcon, width: 11, height: 11 }, { type: 'text', text: '紫外线  ' + uvIndex + ' ' + uvDesc, font: { size: 'caption2' }, textColor: C.textMuted }] },
+                { type: 'stack', direction: 'row', alignItems: 'center', gap: 4, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: C.uvIcon, width: 11, height: 11 }, { type: 'text', text: '紫外线  ' + uvDesc, font: { size: 'caption2' }, textColor: C.textMuted }] },
               ],
             },
             { type: 'stack', direction: 'column', width: 1, height: 90, backgroundColor: C.divider, children: [] },
@@ -303,7 +301,7 @@ export default async function (ctx) {
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:wind', color: C.windIcon, width: 12, height: 12 }, { type: 'text', text: windDirText + '风  ' + windLv + '级 ' + windSpeed + ' km/h', font: { size: 'caption1' }, textColor: C.textSec }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:eye.fill', color: C.visIcon, width: 12, height: 12 }, { type: 'text', text: '能见度  ' + visibility + ' km', font: { size: 'caption1' }, textColor: C.textSec }] },
                 { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:aqi.medium', color: aqiColorVal, width: 12, height: 12 }, { type: 'text', text: 'AQI  ' + aqi + ' ' + aqiDesc, font: { size: 'caption1', weight: 'semibold' }, textColor: aqiColorVal }] },
-                { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: C.feelIcon, width: 12, height: 12 }, { type: 'text', text: '舒适度  ' + comfortIndex + ' ' + comfortDesc, font: { size: 'caption1' }, textColor: C.textMuted }] },
+                { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: C.feelIcon, width: 12, height: 12 }, { type: 'text', text: '舒适度  ' + comfortDesc, font: { size: 'caption1' }, textColor: C.textMuted }] },
               ],
             },
           ],
@@ -347,7 +345,7 @@ export default async function (ctx) {
               { type: 'text', text: temp + '°C', font: { size: 'largeTitle', weight: 'bold' }, textColor: C.textPri },
               { type: 'text', text: sky.text, font: { size: 'title3' }, textColor: C.textSec },
               { type: 'text', text: '体感温度 ' + feelTemp + '°C', font: { size: 'subheadline' }, textColor: C.textTer },
-              { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: C.uvIcon, width: 13, height: 13 }, { type: 'text', text: '紫外线  ' + uvIndex + ' ' + uvDesc, font: { size: 'subheadline' }, textColor: C.textMuted }] },
+              { type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:sun.and.horizon.fill', color: C.uvIcon, width: 13, height: 13 }, { type: 'text', text: '紫外线  ' + uvDesc, font: { size: 'subheadline' }, textColor: C.textMuted }] },
             ],
           },
         ],
@@ -370,7 +368,7 @@ export default async function (ctx) {
             type: 'stack', direction: 'column', alignItems: 'start', gap: 14, flex: 1,
             children: [
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:aqi.medium', color: aqiColorVal, width: 13, height: 13 }, { type: 'text', text: '空气质量 AQI', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: aqi + '  ' + aqiDesc, font: { size: 'title3', weight: 'semibold' }, textColor: aqiColorVal }] },
-              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: C.feelIcon, width: 13, height: 13 }, { type: 'text', text: '舒适度', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: comfortIndex + ' ' + comfortDesc, font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
+              { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:thermometer.medium', color: C.feelIcon, width: 13, height: 13 }, { type: 'text', text: '舒适度', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: comfortDesc, font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
               { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: [{ type: 'stack', direction: 'row', alignItems: 'center', gap: 5, children: [{ type: 'image', src: 'sf-symbol:eye.fill', color: C.visIcon, width: 13, height: 13 }, { type: 'text', text: '能见度', font: { size: 'caption1' }, textColor: C.textDim }] }, { type: 'text', text: visibility + ' km', font: { size: 'title3', weight: 'semibold' }, textColor: C.textPri }] },
             ],
           },
