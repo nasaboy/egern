@@ -157,8 +157,8 @@ export default async function (ctx) {
   const comfortDesc = rt.life_index?.comfort?.desc ?? '-';
 
   const refreshAfter = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-  const now = new Date();
-  const updateTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0') + ' 更新';
+  const serverTime = new Date(data.server_time * 1000);
+  const updateTime = serverTime.getHours().toString().padStart(2, '0') + ':' + serverTime.getMinutes().toString().padStart(2, '0') + ' 更新';
 
   // accessoryInline（锁屏单行）
   if (ctx.widgetFamily === 'accessoryInline') {
