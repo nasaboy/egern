@@ -1,5 +1,5 @@
 // 和风天气小组件 for Egern
-// version 5
+// version 6
 // 环境变量（在 widgets env 中配置）：
 //   QW_HOST     - 你的 API Host，例如 abcxyz.qweatherapi.com
 //   QW_KEY      - 你的 API Key
@@ -489,18 +489,18 @@ export default async function (ctx) {
               gap: 6,
               children: [
                 {
-                  type: "text",
-                  text: `湿度  ${now.humidity}%`,
-                  font: { size: "footnote" },
-                  textColor: "#FFFFFFCC",
-                  flex: 1,
-                },
-                {
                   type: "image",
                   src: "sf-symbol:humidity.fill",
                   color: "#AADEFC",
                   width: 14,
                   height: 14,
+                },
+                {
+                  type: "text",
+                  text: `湿度  ${now.humidity}%`,
+                  font: { size: "footnote" },
+                  textColor: "#FFFFFFCC",
+                  flex: 1,
                 },
               ],
             },
@@ -510,15 +510,6 @@ export default async function (ctx) {
               alignItems: "center",
               gap: 6,
               children: [
-                {
-                  type: "text",
-                  text: `${windLevelName(now.windScale)}  ${now.windDir} ${now.windSpeed}km/h`,
-                  font: { size: "footnote" },
-                  textColor: "#FFFFFFCC",
-                  maxLines: 1,
-                  minScale: 0.8,
-                  flex: 1,
-                },
                 {
                   type: "image",
                   src: "sf-symbol:wind",
@@ -526,6 +517,15 @@ export default async function (ctx) {
                   width: 14,
                   height: 14,
                 },
+                {
+                  type: "text",
+                  text: `${windLevelName(now.windScale)} ${now.windScale}级  ${now.windDir} ${now.windSpeed}km/h`,
+                  font: { size: "footnote" },
+                  textColor: "#FFFFFFCC",
+                  maxLines: 1,
+                  minScale: 0.8,
+                  flex: 1,
+                },
               ],
             },
             {
@@ -534,6 +534,13 @@ export default async function (ctx) {
               alignItems: "center",
               gap: 6,
               children: [
+                {
+                  type: "image",
+                  src: "sf-symbol:aqi.medium",
+                  color: aqiColor,
+                  width: 14,
+                  height: 14,
+                },
                 {
                   type: "text",
                   text: `AQI ${aqiVal}  ${aqiCategory}`,
@@ -542,13 +549,6 @@ export default async function (ctx) {
                   maxLines: 1,
                   flex: 1,
                 },
-                {
-                  type: "image",
-                  src: "sf-symbol:aqi.medium",
-                  color: aqiColor,
-                  width: 14,
-                  height: 14,
-                },
               ],
             },
             {
@@ -558,18 +558,18 @@ export default async function (ctx) {
               gap: 6,
               children: [
                 {
-                  type: "text",
-                  text: `能见度  ${now.vis}km`,
-                  font: { size: "footnote" },
-                  textColor: "#FFFFFFCC",
-                  flex: 1,
-                },
-                {
                   type: "image",
                   src: "sf-symbol:eye.fill",
                   color: "#FFE680",
                   width: 14,
                   height: 14,
+                },
+                {
+                  type: "text",
+                  text: `能见度  ${now.vis}km`,
+                  font: { size: "footnote" },
+                  textColor: "#FFFFFFCC",
+                  flex: 1,
                 },
               ],
             },
