@@ -1,5 +1,5 @@
 // 和风天气小组件 for Egern
-// version 3
+// version 4
 // 环境变量（在 widgets env 中配置）：
 //   QW_HOST     - 你的 API Host，例如 abcxyz.qweatherapi.com
 //   QW_KEY      - 你的 API Key
@@ -412,164 +412,162 @@ export default async function (ctx) {
       ],
     },
     { type: "spacer", length: 6 },
-    // 中部：图标 + 温度 + 天气状况 + 体感温度，横向一排
+    // 主体：左右两栏
     {
       type: "stack",
       direction: "row",
       alignItems: "center",
-      gap: 10,
-      children: [
-        {
-          type: "image",
-          src: weatherIconSrc,
-          color: "#FFFFFF",
-          width: 48,
-          height: 48,
-        },
-        {
-          type: "text",
-          text: `${now.temp}°`,
-          font: { size: "largeTitle", weight: "bold" },
-          textColor: "#FFFFFF",
-          maxLines: 1,
-          minScale: 0.7,
-        },
-        {
-          type: "text",
-          text: now.text,
-          font: { size: "subheadline" },
-          textColor: "#FFFFFFCC",
-        },
-        {
-          type: "text",
-          text: `体感 ${now.feelsLike}°`,
-          font: { size: "subheadline" },
-          textColor: "#FFFFFF88",
-        },
-        { type: "spacer" },
-      ],
-    },
-    { type: "spacer", length: 12 },
-    // 底部详情行：湿度 / 风力 / AQI / 能见度
-    {
-      type: "stack",
-      direction: "row",
-      alignItems: "center",
+      flex: 1,
       gap: 0,
       children: [
+        // 左栏：图标 + 大温度 + 天气状况 + 体感温度
         {
           type: "stack",
           direction: "column",
-          alignItems: "center",
           flex: 1,
-          gap: 3,
+          gap: 6,
           children: [
             {
-              type: "image",
-              src: "sf-symbol:humidity.fill",
-              color: "#AADEFC",
-              width: 16,
-              height: 16,
+              type: "stack",
+              direction: "row",
+              alignItems: "center",
+              gap: 8,
+              children: [
+                {
+                  type: "image",
+                  src: weatherIconSrc,
+                  color: "#FFFFFF",
+                  width: 48,
+                  height: 48,
+                },
+                {
+                  type: "text",
+                  text: `${now.temp}°`,
+                  font: { size: "largeTitle", weight: "bold" },
+                  textColor: "#FFFFFF",
+                  maxLines: 1,
+                  minScale: 0.7,
+                },
+              ],
             },
             {
-              type: "text",
-              text: `${now.humidity}%`,
-              font: { size: "caption1", weight: "semibold" },
-              textColor: "#FFFFFF",
-            },
-            {
-              type: "text",
-              text: "湿度",
-              font: { size: "caption2" },
-              textColor: "#FFFFFF66",
+              type: "stack",
+              direction: "row",
+              alignItems: "center",
+              gap: 6,
+              children: [
+                {
+                  type: "text",
+                  text: now.text,
+                  font: { size: "subheadline" },
+                  textColor: "#FFFFFFCC",
+                },
+                {
+                  type: "text",
+                  text: `体感 ${now.feelsLike}°`,
+                  font: { size: "subheadline" },
+                  textColor: "#FFFFFF88",
+                },
+              ],
             },
           ],
         },
-        { type: "stack", width: 1, height: 36, backgroundColor: "#FFFFFF22" },
+        // 分隔线
+        { type: "stack", width: 1, height: 60, backgroundColor: "#FFFFFF22" },
+        // 右栏：湿度 / 风力 / AQI / 能见度
         {
           type: "stack",
           direction: "column",
-          alignItems: "center",
           flex: 1,
-          gap: 3,
+          gap: 8,
+          padding: [0, 0, 0, 12],
           children: [
             {
-              type: "image",
-              src: "sf-symbol:wind",
-              color: "#A8F0C0",
-              width: 16,
-              height: 16,
+              type: "stack",
+              direction: "row",
+              alignItems: "center",
+              gap: 6,
+              children: [
+                {
+                  type: "image",
+                  src: "sf-symbol:humidity.fill",
+                  color: "#AADEFC",
+                  width: 14,
+                  height: 14,
+                },
+                {
+                  type: "text",
+                  text: `湿度  ${now.humidity}%`,
+                  font: { size: "footnote" },
+                  textColor: "#FFFFFFCC",
+                },
+              ],
             },
             {
-              type: "text",
-              text: windLevelName(now.windScale),
-              font: { size: "caption1", weight: "semibold" },
-              textColor: "#FFFFFF",
+              type: "stack",
+              direction: "row",
+              alignItems: "center",
+              gap: 6,
+              children: [
+                {
+                  type: "image",
+                  src: "sf-symbol:wind",
+                  color: "#A8F0C0",
+                  width: 14,
+                  height: 14,
+                },
+                {
+                  type: "text",
+                  text: `${windLevelName(now.windScale)}  ${now.windDir} ${now.windSpeed}km/h`,
+                  font: { size: "footnote" },
+                  textColor: "#FFFFFFCC",
+                  maxLines: 1,
+                  minScale: 0.8,
+                },
+              ],
             },
             {
-              type: "text",
-              text: `${now.windDir} ${now.windSpeed}km/h`,
-              font: { size: "caption2" },
-              textColor: "#FFFFFF66",
-            },
-          ],
-        },
-        { type: "stack", width: 1, height: 36, backgroundColor: "#FFFFFF22" },
-        {
-          type: "stack",
-          direction: "column",
-          alignItems: "center",
-          flex: 1,
-          gap: 3,
-          children: [
-            {
-              type: "image",
-              src: "sf-symbol:aqi.medium",
-              color: aqiColor,
-              width: 16,
-              height: 16,
-            },
-            {
-              type: "text",
-              text: aqiVal,
-              font: { size: "caption1", weight: "semibold" },
-              textColor: "#FFFFFF",
+              type: "stack",
+              direction: "row",
+              alignItems: "center",
+              gap: 6,
+              children: [
+                {
+                  type: "image",
+                  src: "sf-symbol:aqi.medium",
+                  color: aqiColor,
+                  width: 14,
+                  height: 14,
+                },
+                {
+                  type: "text",
+                  text: `AQI ${aqiVal}  ${aqiCategory}`,
+                  font: { size: "footnote" },
+                  textColor: "#FFFFFFCC",
+                  maxLines: 1,
+                },
+              ],
             },
             {
-              type: "text",
-              text: aqiCategory || "AQI",
-              font: { size: "caption2" },
-              textColor: "#FFFFFF66",
-              maxLines: 1,
-            },
-          ],
-        },
-        { type: "stack", width: 1, height: 36, backgroundColor: "#FFFFFF22" },
-        {
-          type: "stack",
-          direction: "column",
-          alignItems: "center",
-          flex: 1,
-          gap: 3,
-          children: [
-            {
-              type: "image",
-              src: "sf-symbol:eye.fill",
-              color: "#FFE680",
-              width: 16,
-              height: 16,
-            },
-            {
-              type: "text",
-              text: `${now.vis}km`,
-              font: { size: "caption1", weight: "semibold" },
-              textColor: "#FFFFFF",
-            },
-            {
-              type: "text",
-              text: "能见度",
-              font: { size: "caption2" },
-              textColor: "#FFFFFF66",
+              type: "stack",
+              direction: "row",
+              alignItems: "center",
+              gap: 6,
+              children: [
+                {
+                  type: "image",
+                  src: "sf-symbol:eye.fill",
+                  color: "#FFE680",
+                  width: 14,
+                  height: 14,
+                },
+                {
+                  type: "text",
+                  text: `能见度  ${now.vis}km`,
+                  font: { size: "footnote" },
+                  textColor: "#FFFFFFCC",
+                },
+              ],
             },
           ],
         },
