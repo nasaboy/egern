@@ -1,5 +1,5 @@
 // 和风天气小组件 for Egern
-// version 6
+// version 7
 // 环境变量（在 widgets env 中配置）：
 //   QW_HOST     - 你的 API Host，例如 abcxyz.qweatherapi.com
 //   QW_KEY      - 你的 API Key
@@ -82,7 +82,7 @@ export default async function (ctx) {
   try {
     const [wResp, aResp] = await Promise.all([
       ctx.http.get(
-        `https://${host}/v7/weather/now?location=${geoInfo.id}&lang=zh`,
+        `https://${host}/v7/grid-weather/now?location=${geoInfo.lon},${geoInfo.lat}&lang=zh`,
         { headers }
       ),
       ctx.http.get(
@@ -462,12 +462,12 @@ export default async function (ctx) {
                   font: { size: "subheadline" },
                   textColor: "#FFFFFFCC",
                 },
-                {
+                ...(now.feelsLike != null ? [{
                   type: "text",
                   text: `体感 ${now.feelsLike}°`,
                   font: { size: "subheadline" },
                   textColor: "#FFFFFF88",
-                },
+                }] : []),
               ],
             },
           ],
